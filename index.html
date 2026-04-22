@@ -4,526 +4,134 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Zeiterfassung</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
- 
-  :root {
-    --orange: #E8540A;
-    --orange-light: #FFF0EA;
-    --orange-dark: #BF420A;
-    --bg: #F5F3EF;
-    --card: #FFFFFF;
-    --text: #1A1714;
-    --muted: #7A756E;
-    --border: #E2DDD7;
-    --success: #2D6A4F;
-    --success-bg: #E8F5EE;
-    --error: #9B1C1C;
-    --red-light: #FEF2F2;
-  }
- 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
- 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-  }
- 
-  .topbar {
-    background: var(--orange);
-    color: white;
-    padding: 16px 20px 20px;
-    position: relative;
-    overflow: hidden;
-  }
-  .topbar::after {
-    content: '';
-    position: absolute;
-    right: -30px; bottom: -40px;
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.08);
-  }
-  .topbar::before {
-    content: '';
-    position: absolute;
-    right: 20px; bottom: -60px;
-    width: 180px; height: 180px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-  }
- 
-  .company-label {
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    opacity: 0.7;
-    margin-bottom: 4px;
-    font-weight: 500;
-  }
- 
-  .employee-name {
-    font-size: 22px;
-    font-weight: 600;
-    line-height: 1.2;
-    margin-bottom: 2px;
-  }
- 
-  .employee-meta {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    opacity: 0.75;
-  }
- 
-  .date-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 20px;
-    padding: 5px 12px;
-    font-size: 13px;
-    font-weight: 500;
-    margin-top: 12px;
-  }
- 
-  .date-chip .dot {
-    width: 6px; height: 6px;
-    background: #7BEF9C;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
- 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
- 
-  .main {
-    flex: 1;
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
- 
-  .card {
-    background: var(--card);
-    border-radius: 16px;
-    padding: 18px;
-    border: 1px solid var(--border);
-  }
- 
-  .card-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
- 
-  /* Datum-Modi */
-  .date-mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
- 
-  .korrektur-picker { display: none; margin-top: 12px; }
-  .korrektur-picker.show { display: block; }
- 
-  .korrektur-select {
-    width: 100%;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text);
-    background: var(--bg);
-    border: 1.5px solid #E87070;
-    border-radius: 12px;
-    padding: 12px 14px;
-    outline: none;
-    cursor: pointer;
-  }
- 
-  .korrektur-hint {
-    margin-top: 8px;
-    font-size: 12px;
-    color: var(--error);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
- 
-  .korrektur-badge {
-    display: inline-block;
-    background: var(--red-light);
-    color: var(--error);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 3px 8px;
-    border-radius: 6px;
-  }
- 
-  .type-btn.korrektur.active {
-    border-color: var(--error);
-    background: var(--red-light);
-    color: var(--error);
-  }
- 
-  .date-info {
-    text-align: center;
-    margin-top: 10px;
-    font-size: 13px;
-    color: var(--muted);
-    min-height: 18px;
-  }
- 
-  .time-row {
-    display: grid;
-    grid-template-columns: 1fr 32px 1fr;
-    gap: 8px;
-    align-items: center;
-  }
- 
-  .time-block { display: flex; flex-direction: column; gap: 4px; }
-  .time-sublabel { font-size: 11px; color: var(--muted); font-weight: 500; }
- 
-  .time-input {
-    font-family: 'DM Mono', monospace;
-    font-size: 28px;
-    font-weight: 500;
-    color: var(--text);
-    border: none;
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 10px 12px;
-    width: 100%;
-    outline: none;
-    text-align: center;
-    appearance: none;
-    -webkit-appearance: none;
-  }
- 
-  .time-input:focus {
-    background: var(--orange-light);
-    outline: 2px solid var(--orange);
-    outline-offset: -2px;
-  }
- 
-  .time-input:disabled { opacity: 0.35; }
- 
-  .time-separator {
-    font-size: 22px;
-    color: var(--muted);
-    text-align: center;
-    font-weight: 300;
-    margin-top: 8px;
-  }
- 
-  .duration-badge {
-    text-align: center;
-    margin-top: 12px;
-    font-size: 13px;
-    color: var(--muted);
-  }
- 
-  .duration-badge span {
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-    color: var(--orange);
-    font-size: 15px;
-  }
- 
-  .pause-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-top: 10px;
-  }
- 
-  .pause-label { font-size: 14px; color: var(--text); font-weight: 500; }
-  .pause-hint { font-size: 12px; color: var(--muted); }
- 
-  .pause-select {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 10px;
-    outline: none;
-    cursor: pointer;
-  }
- 
-  .pause-select:focus { border-color: var(--orange); }
-  .pause-select:disabled { opacity: 0.35; }
- 
-  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
- 
-  .type-btn {
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 12px;
-    background: var(--bg);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--muted);
-    transition: all 0.15s;
-    touch-action: manipulation;
-  }
- 
-  .type-btn.active {
-    border-color: var(--orange);
-    background: var(--orange-light);
-    color: var(--orange-dark);
-  }
- 
-  .type-btn .icon { font-size: 18px; line-height: 1; }
- 
-  .remark-textarea {
-    width: 100%;
-    min-height: 90px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    color: var(--text);
-    background: var(--bg);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 14px;
-    resize: none;
-    outline: none;
-    line-height: 1.5;
-  }
- 
-  .remark-textarea::placeholder { color: var(--muted); }
-  .remark-textarea:focus { border-color: var(--orange); background: var(--orange-light); }
- 
-  .submit-btn {
-    background: var(--orange);
-    color: white;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 17px;
-    font-weight: 600;
-    border: none;
-    border-radius: 16px;
-    padding: 18px;
-    width: 100%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: background 0.15s, transform 0.1s;
-    touch-action: manipulation;
-  }
- 
-  .submit-btn.korrektur-mode { background: var(--error); }
-  .submit-btn:active { opacity: 0.88; transform: scale(0.98); }
-  .submit-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
- 
-  .toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--text);
-    color: white;
-    border-radius: 12px;
-    padding: 14px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 100;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-  }
- 
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.success { background: var(--success); }
-  .toast.error { background: var(--error); }
- 
-  .success-screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    padding: 40px 24px;
-    text-align: center;
-    animation: fadeUp 0.4s ease;
-  }
- 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
- 
-  .success-icon {
-    width: 80px; height: 80px;
-    background: var(--success-bg);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 36px;
-    margin-bottom: 20px;
-  }
- 
-  .success-icon.korrektur { background: var(--red-light); }
- 
-  .success-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
-  .success-sub { font-size: 15px; color: var(--muted); line-height: 1.5; margin-bottom: 28px; }
- 
-  .success-detail {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px 20px;
-    width: 100%;
-    max-width: 340px;
-    text-align: left;
-  }
- 
-  .success-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    font-size: 14px;
-  }
- 
-  .success-row:not(:last-child) { border-bottom: 1px solid var(--border); }
-  .success-row .sk { color: var(--muted); }
-  .success-row .sv { font-weight: 500; font-family: 'DM Mono', monospace; font-size: 13px; }
- 
-  .again-btn {
-    margin-top: 24px;
-    background: none;
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 28px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text);
-    cursor: pointer;
-  }
- 
-  .setup-screen { display: none; flex-direction: column; }
-  .setup-input {
-    width: 100%;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 16px;
-    color: var(--text);
-    background: var(--card);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    outline: none;
-  }
-  .setup-input:focus { border-color: var(--orange); }
-  .setup-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
- 
-  .spinner {
-    width: 20px; height: 20px;
-    border: 2.5px solid rgba(255,255,255,0.4);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
- 
-  @keyframes spin { to { transform: rotate(360deg); } }
+:root {
+  --orange: #E8540A;
+  --orange-light: #FFF0EA;
+  --bg: #F5F3EF;
+  --card: #FFFFFF;
+  --text: #1A1714;
+  --muted: #7A756E;
+  --border: #E2DDD7;
+  --red: #9B1C1C;
+  --red-light: #FEF2F2;
+  --green: #2D6A4F;
+  --green-light: #E8F5EE;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.topbar { background: var(--orange); color: white; padding: 16px 20px 20px; }
+.company { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
+.empname { font-size: 22px; font-weight: bold; margin: 4px 0 2px; }
+.empmeta { font-size: 12px; opacity: 0.75; }
+.datechip { display: inline-block; background: rgba(255,255,255,0.15); border-radius: 20px; padding: 5px 12px; font-size: 13px; margin-top: 10px; }
+.main { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--card); border-radius: 14px; padding: 16px; border: 1px solid var(--border); }
+.cardlabel { font-size: 11px; font-weight: bold; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.typebtn { border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; background: var(--bg); cursor: pointer; font-size: 13px; font-weight: bold; color: var(--muted); text-align: center; }
+.typebtn.active { border-color: var(--orange); background: var(--orange-light); color: var(--orange); }
+.typebtn.red.active { border-color: var(--red); background: var(--red-light); color: var(--red); }
+.timerow { display: grid; grid-template-columns: 1fr 20px 1fr; gap: 8px; align-items: center; }
+.timelabel { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.timeinput { font-size: 26px; font-weight: bold; border: none; background: var(--bg); border-radius: 8px; padding: 8px; width: 100%; text-align: center; outline: none; -webkit-appearance: none; }
+.timeinput:focus { background: var(--orange-light); }
+.sep { text-align: center; font-size: 20px; color: var(--muted); }
+.duration { text-align: center; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.duration b { color: var(--orange); font-size: 15px; }
+.pauserow { display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-top: 10px; }
+.pausesel { font-size: 14px; font-weight: bold; border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; background: white; }
+.textarea { width: 100%; min-height: 80px; font-size: 14px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 12px; resize: none; outline: none; font-family: Arial, sans-serif; background: var(--bg); }
+.textarea:focus { border-color: var(--orange); }
+.submitbtn { background: var(--orange); color: white; font-size: 17px; font-weight: bold; border: none; border-radius: 14px; padding: 18px; width: 100%; cursor: pointer; }
+.submitbtn:disabled { background: var(--border); color: var(--muted); }
+.dateinfo { text-align: center; font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 18px; }
+.hint { font-size: 11px; color: var(--muted); text-align: center; padding-bottom: 20px; }
+.success { display: none; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; }
+.successicon { width: 70px; height: 70px; background: var(--green-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 16px; }
+.successtitle { font-size: 22px; font-weight: bold; margin-bottom: 8px; }
+.successsub { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+.successdetail { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; width: 100%; max-width: 320px; text-align: left; }
+.srow { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.srow:last-child { border-bottom: none; }
+.sk { color: var(--muted); }
+.sv { font-weight: bold; }
+.againbtn { margin-top: 20px; background: none; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 24px; font-size: 14px; font-weight: bold; cursor: pointer; }
+.setupscreen { display: none; flex-direction: column; }
+.setupinner { padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; }
+.setuplabel { font-size: 12px; font-weight: bold; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+.setupinput { width: 100%; font-size: 15px; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; outline: none; font-family: Arial, sans-serif; }
+.setupinput:focus { border-color: var(--orange); }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #333; color: white; border-radius: 10px; padding: 12px 18px; font-size: 13px; transition: transform 0.3s; z-index: 100; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.ok { background: var(--green); }
+.toast.err { background: var(--red); }
 </style>
 </head>
 <body>
  
 <div class="toast" id="toast"></div>
  
-<!-- SETUP SCREEN -->
-<div class="setup-screen" id="setupScreen">
+<div class="setupscreen" id="setupScreen">
   <div class="topbar">
-    <div class="company-label">Zeiterfassung</div>
-    <div class="employee-name">Ersteinrichtung</div>
-    <div class="employee-meta">Einmalig ausfüllen</div>
+    <div class="company">Zeiterfassung</div>
+    <div class="empname">Ersteinrichtung</div>
+    <div class="empmeta">Einmalig ausfüllen</div>
   </div>
-  <div style="padding: 24px 16px; flex:1; display:flex; flex-direction:column; gap:14px;">
-    <div><div class="setup-label">Firmenname</div><input class="setup-input" id="setupCompany" placeholder="z.B. Müller Bau GmbH" /></div>
-    <div><div class="setup-label">Vollständiger Name</div><input class="setup-input" id="setupName" placeholder="z.B. Thomas Schneider" /></div>
-    <div><div class="setup-label">Personalnummer</div><input class="setup-input" id="setupPnr" placeholder="z.B. MA-042" /></div>
+  <div class="setupinner">
+    <div><div class="setuplabel">Firmenname</div><input class="setupinput" id="sCompany" placeholder="z.B. Müller Bau GmbH"></div>
+    <div><div class="setuplabel">Vollständiger Name</div><input class="setupinput" id="sName" placeholder="z.B. Thomas Schneider"></div>
+    <div><div class="setuplabel">Personalnummer</div><input class="setupinput" id="sPnr" placeholder="z.B. MA-001"></div>
     <div>
-      <div class="setup-label">Google Script URL</div>
-      <input class="setup-input" id="setupUrl" placeholder="https://script.google.com/..." style="font-size:12px;" />
-      <div style="font-size:12px; color:var(--muted); margin-top:6px;">Vom Administrator erhalten</div>
+      <div class="setuplabel">Google Script URL</div>
+      <input class="setupinput" id="sUrl" placeholder="https://script.google.com/..." style="font-size:11px;">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Vom Administrator erhalten</div>
     </div>
-    <button class="submit-btn" onclick="saveSetup()">Speichern &amp; starten <span>→</span></button>
+    <button class="submitbtn" onclick="saveSetup()">Speichern & starten</button>
   </div>
 </div>
  
-<!-- MAIN APP -->
-<div id="appWrapper" style="display:none; flex-direction:column; flex:1;">
+<div id="appWrapper" style="display:none;">
   <div class="topbar">
-    <div class="company-label" id="companyLabel">Firma</div>
-    <div class="employee-name" id="empName">–</div>
-    <div class="employee-meta" id="empMeta">–</div>
-    <div class="date-chip">
-      <span class="dot"></span>
-      <span id="dateLabel">–</span>
-    </div>
+    <div class="company" id="companyLabel">Firma</div>
+    <div class="empname" id="empName">–</div>
+    <div class="empmeta" id="empMeta">–</div>
+    <div class="datechip" id="dateChip">–</div>
   </div>
  
   <div class="main" id="mainForm">
  
-    <!-- DATUM / MODUS WAHL -->
     <div class="card">
-      <div class="card-label">Eintrag für</div>
-      <div class="date-mode-grid" style="grid-template-columns: 1fr 1fr;">
-        <button class="type-btn active" id="btnHeute" onclick="selectDateMode(this,'heute')">
-          <span class="icon">📅</span> Heute
-        </button>
-        <button class="type-btn" id="btnGestern" onclick="selectDateMode(this,'gestern')">
-          <span class="icon">🔄</span> Gestern nachtr.
-        </button>
+      <div class="cardlabel">Eintrag für</div>
+      <div class="grid2">
+        <button class="typebtn active" id="btnHeute" onclick="setDateMode(this,'heute')">📅 Heute</button>
+        <button class="typebtn" id="btnGestern" onclick="setDateMode(this,'gestern')">🔄 Gestern</button>
       </div>
-      <div class="date-info" id="dateInfo"></div>
+      <div class="dateinfo" id="dateInfo"></div>
     </div>
  
-    <!-- ARBEITSZEIT -->
     <div class="card">
-      <div class="card-label">Arbeitszeit</div>
-      <div class="time-row">
-        <div class="time-block">
-          <div class="time-sublabel">Beginn</div>
-          <input class="time-input" type="time" id="timeStart" />
+      <div class="cardlabel">Arbeitszeit</div>
+      <div class="timerow">
+        <div>
+          <div class="timelabel">Beginn</div>
+          <input class="timeinput" type="time" id="tStart" onchange="calcDur()">
         </div>
-        <div class="time-separator">–</div>
-        <div class="time-block">
-          <div class="time-sublabel">Ende</div>
-          <input class="time-input" type="time" id="timeEnd" />
+        <div class="sep">–</div>
+        <div>
+          <div class="timelabel">Ende</div>
+          <input class="timeinput" type="time" id="tEnd" onchange="calcDur()">
         </div>
       </div>
-      <div class="duration-badge" id="durationBadge">Dauer wird berechnet…</div>
- 
-      <div class="pause-row">
+      <div class="duration" id="durLabel">–</div>
+      <div class="pauserow">
         <div>
-          <div class="pause-label">Pause</div>
-          <div class="pause-hint">Abzug von der Arbeitszeit</div>
+          <div style="font-size:14px;font-weight:bold;">Pause</div>
+          <div style="font-size:12px;color:var(--muted);">Abzug von Arbeitszeit</div>
         </div>
-        <select class="pause-select" id="pauseSelect">
+        <select class="pausesel" id="pauseSel" onchange="calcDur()">
           <option value="0">keine</option>
           <option value="30">30 Min.</option>
           <option value="60" selected>60 Min.</option>
@@ -531,73 +139,62 @@
       </div>
     </div>
  
-    <!-- ART DES TAGES -->
     <div class="card">
-      <div class="card-label">Art des Tages</div>
-      <div class="type-grid" id="typeGrid">
-        <button class="type-btn active" data-type="Baustelle" onclick="selectType(this)">
-          <span class="icon">🏗️</span> Baustelle
-        </button>
-        <button class="type-btn" data-type="KUG" onclick="selectType(this)">
-          <span class="icon">📉</span> KUG
-        </button>
-        <button class="type-btn" data-type="Urlaub" onclick="selectType(this)">
-          <span class="icon">🌴</span> Urlaub
-        </button>
-        <button class="type-btn" data-type="Krank" onclick="selectType(this)">
-          <span class="icon">🤒</span> Krank
-        </button>
-        <button class="type-btn" data-type="Sonstiges" onclick="selectType(this)" style="grid-column: span 2;">
-          <span class="icon">📋</span> Sonstiges
-        </button>
+      <div class="cardlabel">Art des Tages</div>
+      <div class="grid2">
+        <button class="typebtn active" data-type="Baustelle" onclick="setType(this)">🏗️ Baustelle</button>
+        <button class="typebtn" data-type="KUG" onclick="setType(this)">📉 KUG</button>
+        <button class="typebtn" data-type="Urlaub" onclick="setType(this)">🌴 Urlaub</button>
+        <button class="typebtn" data-type="Krank" onclick="setType(this)">🤒 Krank</button>
+        <button class="typebtn" data-type="Sonstiges" onclick="setType(this)" style="grid-column:span 2">📋 Sonstiges</button>
       </div>
     </div>
  
-    <!-- BEMERKUNG -->
     <div class="card">
-      <div class="card-label">Bemerkung</div>
-      <textarea class="remark-textarea" id="remark" placeholder="z.B. Baustelle Spandau, Gerüstbau 2. OG – oder leer lassen"></textarea>
+      <div class="cardlabel">Bemerkung</div>
+      <textarea class="textarea" id="remark" placeholder="z.B. Baustelle Spandau, Gerüstbau 2. OG"></textarea>
     </div>
  
-    <!-- SUBMIT -->
-    <button class="submit-btn" id="submitBtn" onclick="submitEntry()">
-      <span id="btnText">Eintrag übertragen</span>
-      <span id="btnArrow">→</span>
-    </button>
- 
-    <div style="font-size:11px; color:var(--muted); text-align:center; padding-bottom:20px;">
-      Daten werden sicher in Google Sheets gespeichert
-    </div>
+    <button class="submitbtn" id="submitBtn" onclick="doSubmit()">Eintrag übertragen →</button>
+    <div class="hint">Daten werden in Google Sheets gespeichert</div>
   </div>
  
-  <!-- SUCCESS -->
-  <div class="success-screen" id="successScreen">
-    <div class="success-icon" id="successIcon">✓</div>
-    <div class="success-title" id="successTitle">Eingetragen!</div>
-    <div class="success-sub" id="successSub"></div>
-    <div class="success-detail" id="successDetail"></div>
-    <button class="again-btn" onclick="resetForm()">Weiteren Eintrag erstellen</button>
+  <div class="success" id="successScreen">
+    <div class="successicon">✓</div>
+    <div class="successtitle">Eingetragen!</div>
+    <div class="successsub" id="successSub"></div>
+    <div class="successdetail" id="successDetail"></div>
+    <button class="againbtn" onclick="resetForm()">Weiteren Eintrag</button>
   </div>
 </div>
  
-<script type="module">
-let employee = { name: '', pnr: '', company: '', scriptUrl: '' };
-let selectedType = 'Baustelle';
-let dateMode = 'heute'; // 'heute' | 'gestern' | 'korrektur'
-let selectedDate = new Date();
+<script>
+var emp = { name: '', pnr: '', company: '', url: '' };
+var selType = 'Baustelle';
+var dateMode = 'heute';
+var selDate = new Date();
+ 
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+ 
+function showToast(msg, cls) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (cls ? ' ' + cls : '');
+  setTimeout(function() { t.className = 'toast'; }, 3000);
+}
  
 function init() {
-  const params = new URLSearchParams(window.location.search);
-  employee.name      = params.get('name')    || localStorage.getItem('zt_name')    || '';
-  employee.pnr       = params.get('pnr')     || localStorage.getItem('zt_pnr')     || '';
-  employee.company   = params.get('company') || localStorage.getItem('zt_company') || '';
-  employee.scriptUrl = params.get('url')     || localStorage.getItem('zt_url')     || '';
+  var p = new URLSearchParams(window.location.search);
+  emp.name    = p.get('name')    || localStorage.getItem('zt_name')    || '';
+  emp.pnr     = p.get('pnr')     || localStorage.getItem('zt_pnr')     || '';
+  emp.company = p.get('company') || localStorage.getItem('zt_company') || '';
+  emp.url     = p.get('url')     || localStorage.getItem('zt_url')     || '';
  
-  if (!employee.name || !employee.scriptUrl) {
-    document.getElementById('setupName').value    = employee.name;
-    document.getElementById('setupPnr').value     = employee.pnr;
-    document.getElementById('setupCompany').value = employee.company;
-    document.getElementById('setupUrl').value     = employee.scriptUrl || 'https://script.google.com/macros/s/AKfycbw-1wSPMQVnP0qxoH-SLmZ4wcIDPp7T-YkXA3jEbD6MvOOBxRwfLMOqOcRzWPqfQWYB/exec';
+  if (!emp.name || !emp.url) {
+    document.getElementById('sName').value    = emp.name;
+    document.getElementById('sPnr').value     = emp.pnr;
+    document.getElementById('sCompany').value = emp.company;
+    document.getElementById('sUrl').value     = emp.url || 'https://script.google.com/macros/s/AKfycbw-1wSPMQVnP0qxoH-SLmZ4wcIDPp7T-YkXA3jEbD6MvOOBxRwfLMOqOcRzWPqfQWYB/exec';
     document.getElementById('setupScreen').style.display = 'flex';
     document.getElementById('setupScreen').style.flexDirection = 'column';
   } else {
@@ -606,233 +203,181 @@ function init() {
 }
  
 function saveSetup() {
-  const name    = document.getElementById('setupName').value.trim();
-  const pnr     = document.getElementById('setupPnr').value.trim();
-  const company = document.getElementById('setupCompany').value.trim();
-  const url     = document.getElementById('setupUrl').value.trim();
-  if (!name) { showToast('Bitte Namen eingeben', 'error'); return; }
-  if (!url)  { showToast('Bitte Script-URL eingeben', 'error'); return; }
+  var name    = document.getElementById('sName').value.trim();
+  var pnr     = document.getElementById('sPnr').value.trim();
+  var company = document.getElementById('sCompany').value.trim();
+  var url     = document.getElementById('sUrl').value.trim();
+  if (!name) { showToast('Bitte Namen eingeben', 'err'); return; }
+  if (!url)  { showToast('Bitte Script-URL eingeben', 'err'); return; }
   localStorage.setItem('zt_name', name);
   localStorage.setItem('zt_pnr', pnr);
   localStorage.setItem('zt_company', company);
   localStorage.setItem('zt_url', url);
-  employee = { name, pnr, company, scriptUrl: url };
+  emp = { name: name, pnr: pnr, company: company, url: url };
   document.getElementById('setupScreen').style.display = 'none';
   startApp();
 }
  
 function startApp() {
-  document.getElementById('appWrapper').style.display = 'flex';
-  document.getElementById('appWrapper').style.flexDirection = 'column';
-  document.getElementById('empName').textContent    = employee.name;
-  document.getElementById('empMeta').textContent    = employee.pnr ? `Nr. ${employee.pnr}` : 'Mitarbeiter';
-  document.getElementById('companyLabel').textContent = employee.company || 'Zeiterfassung';
+  document.getElementById('appWrapper').style.display = 'block';
+  document.getElementById('empName').textContent    = emp.name;
+  document.getElementById('empMeta').textContent    = emp.pnr ? 'Nr. ' + emp.pnr : 'Mitarbeiter';
+  document.getElementById('companyLabel').textContent = emp.company || 'Zeiterfassung';
  
-  const now = new Date();
-  document.getElementById('dateLabel').textContent = now.toLocaleDateString('de-DE', {
-    weekday: 'long', day: 'numeric', month: 'long'
-  });
+  var now = new Date();
+  document.getElementById('dateChip').textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
  
-  // Korrektur-Dropdown befüllen (7 Tage zurück, heute ausgeschlossen)
-  const sel = document.getElementById('korrekturDate');
-  sel.innerHTML = '';
-  for (let i = 1; i <= 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    sel.appendChild(opt);
-  }
- 
-  // Default-Zeiten
-  const pad = n => String(n).padStart(2, '0');
-  const startH = Math.max(0, now.getHours() - 8);
-  document.getElementById('timeStart').value = `${pad(startH)}:00`;
-  document.getElementById('timeEnd').value   = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
- 
-  selectDateMode(document.getElementById('btnHeute'), 'heute');
- 
-  document.getElementById('timeStart').addEventListener('change', calcDuration);
-  document.getElementById('timeEnd').addEventListener('change', calcDuration);
-  document.getElementById('pauseSelect').addEventListener('change', calcDuration);
+  var startH = now.getHours() - 8;
+  if (startH < 0) startH = 7;
+  document.getElementById('tStart').value = pad(startH) + ':00';
+  document.getElementById('tEnd').value   = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  calcDur();
 }
  
-function selectDateMode(btn, mode) {
-  document.querySelectorAll('.date-mode-grid .type-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+function setDateMode(btn, mode) {
+  document.getElementById('btnHeute').className   = 'typebtn' + (mode === 'heute'   ? ' active' : '');
+  document.getElementById('btnGestern').className = 'typebtn' + (mode === 'gestern' ? ' active' : '');
   dateMode = mode;
-  const info = document.getElementById('dateInfo');
+  selDate = new Date();
   if (mode === 'gestern') {
-    selectedDate = new Date();
-    selectedDate.setDate(selectedDate.getDate() - 1);
-    info.textContent = selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+    selDate.setDate(selDate.getDate() - 1);
+    document.getElementById('dateInfo').textContent = selDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
   } else {
-    selectedDate = new Date();
-    info.textContent = '';
+    document.getElementById('dateInfo').textContent = '';
   }
 }
  
-function calcDuration() {
-  const s = document.getElementById('timeStart').value;
-  const e = document.getElementById('timeEnd').value;
-  const pause = parseInt(document.getElementById('pauseSelect').value) || 0;
-  const badge = document.getElementById('durationBadge');
-  if (!s || !e) { badge.innerHTML = 'Bitte Zeiten eingeben'; return; }
-  const [sh, sm] = s.split(':').map(Number);
-  const [eh, em] = e.split(':').map(Number);
-  let mins = (eh * 60 + em) - (sh * 60 + sm) - pause;
-  if (mins < 0) mins += 1440;
-  if (mins <= 0) { badge.innerHTML = 'Ungültige Zeit'; return; }
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  badge.innerHTML = `Arbeitszeit: <span>${h}h ${m > 0 ? m + 'min' : ''}</span>${pause > 0 ? ` (inkl. ${pause} Min. Pause)` : ''}`;
+function calcDur() {
+  var s = document.getElementById('tStart').value;
+  var e = document.getElementById('tEnd').value;
+  var pause = parseInt(document.getElementById('pauseSel').value) || 0;
+  var lbl = document.getElementById('durLabel');
+  if (!s || !e) { lbl.textContent = '–'; return; }
+  var sh = parseInt(s.split(':')[0]), sm = parseInt(s.split(':')[1]);
+  var eh = parseInt(e.split(':')[0]), em = parseInt(e.split(':')[1]);
+  var mins = (eh * 60 + em) - (sh * 60 + sm) - pause;
+  if (mins <= 0) { lbl.innerHTML = 'Ungültige Zeit'; return; }
+  var h = Math.floor(mins / 60), m = mins % 60;
+  lbl.innerHTML = 'Arbeitszeit: <b>' + h + 'h' + (m > 0 ? ' ' + m + 'min' : '') + '</b>' + (pause > 0 ? ' (inkl. ' + pause + ' Min. Pause)' : '');
 }
  
-function selectType(btn) {
-  document.querySelectorAll('.type-grid .type-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  selectedType = btn.dataset.type;
-  const isAbsent = selectedType === 'Urlaub' || selectedType === 'Krank';
-  const isKUG    = selectedType === 'KUG';
+function setType(btn) {
+  var btns = document.querySelectorAll('[data-type]');
+  for (var i = 0; i < btns.length; i++) btns[i].className = 'typebtn';
+  btn.className = 'typebtn active';
+  selType = btn.getAttribute('data-type');
  
-  document.getElementById('timeStart').disabled   = isAbsent;
-  document.getElementById('timeEnd').disabled     = isAbsent;
-  document.getElementById('pauseSelect').disabled = isAbsent || isKUG;
+  var absent = selType === 'Urlaub' || selType === 'Krank';
+  document.getElementById('tStart').disabled   = absent;
+  document.getElementById('tEnd').disabled     = absent;
+  document.getElementById('pauseSel').disabled = absent || selType === 'KUG';
  
-  if (isKUG) {
-    document.getElementById('timeStart').value = '08:00';
-    document.getElementById('timeEnd').value   = '16:00';
-    document.getElementById('pauseSelect').value = '0';
-    document.getElementById('pauseSelect').disabled = true;
-    calcDuration();
-  } else if (isAbsent) {
-    document.getElementById('durationBadge').innerHTML = `<span>${selectedType}</span> – kein Arbeitstag`;
+  if (selType === 'KUG') {
+    document.getElementById('tStart').value = '08:00';
+    document.getElementById('tEnd').value   = '16:00';
+    document.getElementById('pauseSel').value = '0';
+    calcDur();
+  } else if (absent) {
+    document.getElementById('durLabel').textContent = selType + ' – kein Arbeitstag';
   } else {
-    calcDuration();
+    calcDur();
   }
 }
  
-async function submitEntry() {
-  const start  = document.getElementById('timeStart').value;
-  const end    = document.getElementById('timeEnd').value;
-  const pause  = document.getElementById('pauseSelect').value;
-  const remark = document.getElementById('remark').value.trim();
-  const isAbsent = selectedType === 'Urlaub' || selectedType === 'Krank';
+function doSubmit() {
+  var start  = document.getElementById('tStart').value;
+  var end    = document.getElementById('tEnd').value;
+  var pause  = document.getElementById('pauseSel').value;
+  var remark = document.getElementById('remark').value.trim();
+  var absent = selType === 'Urlaub' || selType === 'Krank';
  
-  if (!isAbsent && (!start || !end)) {
-    showToast('Bitte Start- und Endzeit eingeben', 'error'); return;
-  }
+  if (!absent && (!start || !end)) { showToast('Bitte Zeiten eingeben', 'err'); return; }
  
-  if (dateMode === 'korrektur') updateKorrekturDate();
- 
-  const btn     = document.getElementById('submitBtn');
-  const btnText = document.getElementById('btnText');
-  const btnArrow = document.getElementById('btnArrow');
+  var btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btnText.textContent = 'Wird übertragen…';
-  btnArrow.innerHTML = '<div class="spinner"></div>';
+  btn.textContent = 'Wird übertragen…';
  
-  const now = new Date();
-  const dateStr  = selectedDate.toLocaleDateString('de-DE');
-  const weekday  = selectedDate.toLocaleDateString('de-DE', { weekday: 'long' });
-  const timestamp = now.toLocaleString('de-DE');
-  const isKorrektur = dateMode === 'korrektur';
+  var now = new Date();
+  var dateStr  = selDate.toLocaleDateString('de-DE');
+  var weekday  = selDate.toLocaleDateString('de-DE', { weekday: 'long' });
+  var timestamp = now.toLocaleString('de-DE');
  
-  let netHours = '';
-  if (!isAbsent && start && end) {
-    const [sh, sm] = start.split(':').map(Number);
-    const [eh, em] = end.split(':').map(Number);
-    let mins = (eh * 60 + em) - (sh * 60 + sm) - parseInt(pause);
-    if (mins < 0) mins += 1440;
-    netHours = (mins / 60).toFixed(2);
+  var netHours = '';
+  if (!absent && start && end) {
+    var sh = parseInt(start.split(':')[0]), sm = parseInt(start.split(':')[1]);
+    var eh = parseInt(end.split(':')[0]),   em = parseInt(end.split(':')[1]);
+    var mins = (eh * 60 + em) - (sh * 60 + sm) - parseInt(pause);
+    if (mins > 0) netHours = (mins / 60).toFixed(2);
   }
  
-  const payload = {
-    name:       employee.name,
-    pnr:        employee.pnr,
-    company:    employee.company,
-    date:       dateStr,
-    weekday:    weekday,
-    start:      isAbsent ? '' : start,
-    end:        isAbsent ? '' : end,
-    pause:      isAbsent ? '' : pause + ' Min.',
-    netHours:   netHours,
-    type:       selectedType,
-    remark:     remark,
-    timestamp:  timestamp,
-    korrektur:  isKorrektur ? 'JA' : ''
+  var payload = {
+    name:      emp.name,
+    pnr:       emp.pnr,
+    company:   emp.company,
+    date:      dateStr,
+    weekday:   weekday,
+    start:     absent ? '' : start,
+    end:       absent ? '' : end,
+    pause:     absent ? '' : pause + ' Min.',
+    netHours:  netHours,
+    type:      selType,
+    remark:    remark,
+    timestamp: timestamp,
+    korrektur: ''
   };
  
-  try {
-    const callbackName = 'cb_' + Date.now();
-    const qs = new URLSearchParams(payload).toString();
-    const scriptUrl = employee.scriptUrl + '?' + qs + '&callback=' + callbackNam  const qs = new URLSearchParams(payload).toString();
-    const response = await fetch('/submit?' + qs);
-    const result = await response.json();
-    showSuccess(payload, isKorrektur);
-  } catch (err) {
-    btn.disabled = false;
-    btnText.textContent = 'Eintrag übertragen';
-    btnArrow.textContent = '→';
-    showToast('Fehler beim Übertragen – Internetverbindung prüfen', 'error');
+  var qs = '';
+  var keys = Object.keys(payload);
+  for (var i = 0; i < keys.length; i++) {
+    if (qs) qs += '&';
+    qs += encodeURIComponent(keys[i]) + '=' + encodeURIComponent(payload[keys[i]]);
   }
+ 
+  var img = new Image();
+  img.onload = function() { showSuccessScreen(payload); };
+  img.onerror = function() { showSuccessScreen(payload); };
+  img.src = emp.url + '?' + qs;
+ 
+  setTimeout(function() { showSuccessScreen(payload); }, 6000);
 }
  
-function showSuccess(payload, isKorrektur) {
+function showSuccessScreen(payload) {
   document.getElementById('mainForm').style.display = 'none';
-  const ss = document.getElementById('successScreen');
-  ss.style.display = 'flex';
+  document.getElementById('successScreen').style.display = 'flex';
+  document.getElementById('successScreen').style.flexDirection = 'column';
+  document.getElementById('successSub').innerHTML = payload.name + ' · ' + payload.date + '<br>Eintrag gespeichert.';
  
-  const icon = document.getElementById('successIcon');
-  icon.textContent = isKorrektur ? '✏️' : '✓';
-  if (isKorrektur) icon.classList.add('korrektur');
- 
-  document.getElementById('successTitle').textContent = isKorrektur ? 'Korrektur gespeichert!' : 'Eingetragen!';
-  document.getElementById('successSub').innerHTML =
-    `${payload.name} · ${payload.date}${isKorrektur ? '<br><strong style="color:#9B1C1C">Korrektur-Eintrag</strong>' : '<br>Eintrag erfolgreich gespeichert.'}`;
- 
-  const isAbsent = payload.type === 'Urlaub' || payload.type === 'Krank';
-  let rows = `
-    <div class="success-row"><span class="sk">Art</span><span class="sv">${payload.type}</span></div>
-    ${!isAbsent ? `<div class="success-row"><span class="sk">Beginn</span><span class="sv">${payload.start} Uhr</span></div>` : ''}
-    ${!isAbsent ? `<div class="success-row"><span class="sk">Ende</span><span class="sv">${payload.end} Uhr</span></div>` : ''}
-    ${!isAbsent ? `<div class="success-row"><span class="sk">Pause</span><span class="sv">${payload.pause}</span></div>` : ''}
-    ${!isAbsent ? `<div class="success-row"><span class="sk">Netto</span><span class="sv">${payload.netHours} h</span></div>` : ''}
-    ${isKorrektur ? `<div class="success-row"><span class="sk">Status</span><span class="sv" style="color:#9B1C1C">KORREKTUR</span></div>` : ''}
-    ${payload.remark ? `<div class="success-row"><span class="sk">Bemerkung</span><span class="sv" style="text-align:right;max-width:55%;font-family:inherit;">${payload.remark}</span></div>` : ''}
-  `;
-  document.getElementById('successDetail').innerHTML = rows;
+  var absent = payload.type === 'Urlaub' || payload.type === 'Krank';
+  var html = '<div class="srow"><span class="sk">Art</span><span class="sv">' + payload.type + '</span></div>';
+  if (!absent) {
+    html += '<div class="srow"><span class="sk">Beginn</span><span class="sv">' + payload.start + ' Uhr</span></div>';
+    html += '<div class="srow"><span class="sk">Ende</span><span class="sv">' + payload.end + ' Uhr</span></div>';
+    html += '<div class="srow"><span class="sk">Pause</span><span class="sv">' + payload.pause + '</span></div>';
+    html += '<div class="srow"><span class="sk">Netto</span><span class="sv">' + payload.netHours + ' h</span></div>';
+  }
+  if (payload.remark) html += '<div class="srow"><span class="sk">Bemerkung</span><span class="sv">' + payload.remark + '</span></div>';
+  document.getElementById('successDetail').innerHTML = html;
 }
  
 function resetForm() {
   document.getElementById('mainForm').style.display = 'flex';
   document.getElementById('mainForm').style.flexDirection = 'column';
   document.getElementById('successScreen').style.display = 'none';
-  document.getElementById('successIcon').classList.remove('korrektur');
-  document.getElementById('remark').value = '';
   document.getElementById('submitBtn').disabled = false;
-  document.getElementById('btnText').textContent = 'Eintrag übertragen';
-  document.getElementById('btnArrow').textContent = '→';
-  selectType(document.querySelector('.type-grid .type-btn[data-type="Baustelle"]'));
-  selectDateMode(document.getElementById('btnHeute'), 'heute');
-  calcDuration();
-}
- 
-function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
-  setTimeout(() => { t.className = 'toast'; }, 3500);
+  document.getElementById('submitBtn').textContent = 'Eintrag übertragen →';
+  document.getElementById('remark').value = '';
+  setDateMode(document.getElementById('btnHeute'), 'heute');
+  var btns = document.querySelectorAll('[data-type]');
+  for (var i = 0; i < btns.length; i++) btns[i].className = 'typebtn';
+  btns[0].className = 'typebtn active';
+  selType = 'Baustelle';
+  document.getElementById('tStart').disabled = false;
+  document.getElementById('tEnd').disabled = false;
+  document.getElementById('pauseSel').disabled = false;
+  calcDur();
 }
  
 init();
-</script>
-<script type="module">
-window.onerror = function(msg, src, line, col, err) {
-  document.body.innerHTML = '<div style="padding:20px;font-size:16px;color:red;"><b>JS Fehler:</b><br>' + msg + '<br>Zeile: ' + line + '</div>';
-  return false;
-};
 </script>
 </body>
 </html>
