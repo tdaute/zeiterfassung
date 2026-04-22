@@ -1,3 +1,6 @@
+
+Kopieren
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -765,18 +768,18 @@ async function submitEntry() {
   };
  
   try {
+    const callbackName = 'cb_' + Date.now();
     const qs = new URLSearchParams(payload).toString();
-    const scriptUrl = employee.scriptUrl + '?' + qs + '&callback=handleResponse';
+    const scriptUrl = employee.scriptUrl + '?' + qs + '&callback=' + callbackName;
  
-    // JSONP - funktioniert auf allen Geräten ohne CORS
+    // JSONP
     await new Promise((resolve) => {
-      const callbackName = 'cb_' + Date.now();
       window[callbackName] = function(data) {
         delete window[callbackName];
         resolve(data);
       };
       const script = document.createElement('script');
-      script.src = employee.scriptUrl + '?' + qs + '&callback=' + callbackName;
+      script.src = scriptUrl;
       script.onerror = function() { resolve({}); };
       document.head.appendChild(script);
       setTimeout(resolve, 8000);
