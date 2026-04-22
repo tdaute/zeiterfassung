@@ -766,11 +766,11 @@ async function submitEntry() {
 
   try {
     const qs = new URLSearchParams(payload).toString();
-    // Proxy auf Netlify umgeht CORS komplett
-    const proxyUrl = '/submit?' + qs;
-    const response = await fetch(proxyUrl, { method: 'GET' });
-    const result = await response.json();
-    if (result.status === 'error') throw new Error(result.message);
+    const scriptUrl = employee.scriptUrl + '?' + qs;
+    // CORS-Proxy umgeht mobile Einschränkungen
+    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(scriptUrl);
+    const response = await fetch(proxyUrl);
+    const data = await response.json();
     showSuccess(payload, isKorrektur);
   } catch (err) {
     btn.disabled = false;
