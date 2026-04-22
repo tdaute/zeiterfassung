@@ -8,7 +8,7 @@
 <title>Zeiterfassung</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-
+ 
   :root {
     --orange: #E8540A;
     --orange-light: #FFF0EA;
@@ -23,9 +23,9 @@
     --error: #9B1C1C;
     --red-light: #FEF2F2;
   }
-
+ 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
+ 
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
@@ -35,7 +35,7 @@
     display: flex;
     flex-direction: column;
   }
-
+ 
   .topbar {
     background: var(--orange);
     color: white;
@@ -59,7 +59,7 @@
     border-radius: 50%;
     background: rgba(255,255,255,0.05);
   }
-
+ 
   .company-label {
     font-size: 11px;
     letter-spacing: 0.12em;
@@ -68,20 +68,20 @@
     margin-bottom: 4px;
     font-weight: 500;
   }
-
+ 
   .employee-name {
     font-size: 22px;
     font-weight: 600;
     line-height: 1.2;
     margin-bottom: 2px;
   }
-
+ 
   .employee-meta {
     font-family: 'DM Mono', monospace;
     font-size: 12px;
     opacity: 0.75;
   }
-
+ 
   .date-chip {
     display: inline-flex;
     align-items: center;
@@ -94,19 +94,19 @@
     font-weight: 500;
     margin-top: 12px;
   }
-
+ 
   .date-chip .dot {
     width: 6px; height: 6px;
     background: #7BEF9C;
     border-radius: 50%;
     animation: pulse 2s infinite;
   }
-
+ 
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
   }
-
+ 
   .main {
     flex: 1;
     padding: 20px 16px;
@@ -114,14 +114,14 @@
     flex-direction: column;
     gap: 14px;
   }
-
+ 
   .card {
     background: var(--card);
     border-radius: 16px;
     padding: 18px;
     border: 1px solid var(--border);
   }
-
+ 
   .card-label {
     font-size: 11px;
     font-weight: 600;
@@ -130,13 +130,13 @@
     color: var(--muted);
     margin-bottom: 12px;
   }
-
+ 
   /* Datum-Modi */
   .date-mode-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-
+ 
   .korrektur-picker { display: none; margin-top: 12px; }
   .korrektur-picker.show { display: block; }
-
+ 
   .korrektur-select {
     width: 100%;
     font-family: 'DM Sans', sans-serif;
@@ -150,7 +150,7 @@
     outline: none;
     cursor: pointer;
   }
-
+ 
   .korrektur-hint {
     margin-top: 8px;
     font-size: 12px;
@@ -159,7 +159,7 @@
     align-items: center;
     gap: 6px;
   }
-
+ 
   .korrektur-badge {
     display: inline-block;
     background: var(--red-light);
@@ -170,13 +170,13 @@
     padding: 3px 8px;
     border-radius: 6px;
   }
-
+ 
   .type-btn.korrektur.active {
     border-color: var(--error);
     background: var(--red-light);
     color: var(--error);
   }
-
+ 
   .date-info {
     text-align: center;
     margin-top: 10px;
@@ -184,17 +184,17 @@
     color: var(--muted);
     min-height: 18px;
   }
-
+ 
   .time-row {
     display: grid;
     grid-template-columns: 1fr 32px 1fr;
     gap: 8px;
     align-items: center;
   }
-
+ 
   .time-block { display: flex; flex-direction: column; gap: 4px; }
   .time-sublabel { font-size: 11px; color: var(--muted); font-weight: 500; }
-
+ 
   .time-input {
     font-family: 'DM Mono', monospace;
     font-size: 28px;
@@ -210,15 +210,15 @@
     appearance: none;
     -webkit-appearance: none;
   }
-
+ 
   .time-input:focus {
     background: var(--orange-light);
     outline: 2px solid var(--orange);
     outline-offset: -2px;
   }
-
+ 
   .time-input:disabled { opacity: 0.35; }
-
+ 
   .time-separator {
     font-size: 22px;
     color: var(--muted);
@@ -226,21 +226,21 @@
     font-weight: 300;
     margin-top: 8px;
   }
-
+ 
   .duration-badge {
     text-align: center;
     margin-top: 12px;
     font-size: 13px;
     color: var(--muted);
   }
-
+ 
   .duration-badge span {
     font-family: 'DM Mono', monospace;
     font-weight: 500;
     color: var(--orange);
     font-size: 15px;
   }
-
+ 
   .pause-row {
     display: flex;
     align-items: center;
@@ -250,10 +250,10 @@
     padding: 12px 14px;
     margin-top: 10px;
   }
-
+ 
   .pause-label { font-size: 14px; color: var(--text); font-weight: 500; }
   .pause-hint { font-size: 12px; color: var(--muted); }
-
+ 
   .pause-select {
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
@@ -266,12 +266,12 @@
     outline: none;
     cursor: pointer;
   }
-
+ 
   .pause-select:focus { border-color: var(--orange); }
   .pause-select:disabled { opacity: 0.35; }
-
+ 
   .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
+ 
   .type-btn {
     border: 1.5px solid var(--border);
     border-radius: 12px;
@@ -288,15 +288,15 @@
     transition: all 0.15s;
     touch-action: manipulation;
   }
-
+ 
   .type-btn.active {
     border-color: var(--orange);
     background: var(--orange-light);
     color: var(--orange-dark);
   }
-
+ 
   .type-btn .icon { font-size: 18px; line-height: 1; }
-
+ 
   .remark-textarea {
     width: 100%;
     min-height: 90px;
@@ -311,10 +311,10 @@
     outline: none;
     line-height: 1.5;
   }
-
+ 
   .remark-textarea::placeholder { color: var(--muted); }
   .remark-textarea:focus { border-color: var(--orange); background: var(--orange-light); }
-
+ 
   .submit-btn {
     background: var(--orange);
     color: white;
@@ -333,11 +333,11 @@
     transition: background 0.15s, transform 0.1s;
     touch-action: manipulation;
   }
-
+ 
   .submit-btn.korrektur-mode { background: var(--error); }
   .submit-btn:active { opacity: 0.88; transform: scale(0.98); }
   .submit-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
-
+ 
   .toast {
     position: fixed;
     bottom: 30px;
@@ -354,11 +354,11 @@
     z-index: 100;
     box-shadow: 0 8px 30px rgba(0,0,0,0.2);
   }
-
+ 
   .toast.show { transform: translateX(-50%) translateY(0); }
   .toast.success { background: var(--success); }
   .toast.error { background: var(--error); }
-
+ 
   .success-screen {
     display: none;
     flex-direction: column;
@@ -369,12 +369,12 @@
     text-align: center;
     animation: fadeUp 0.4s ease;
   }
-
+ 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
+ 
   .success-icon {
     width: 80px; height: 80px;
     background: var(--success-bg);
@@ -383,12 +383,12 @@
     font-size: 36px;
     margin-bottom: 20px;
   }
-
+ 
   .success-icon.korrektur { background: var(--red-light); }
-
+ 
   .success-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
   .success-sub { font-size: 15px; color: var(--muted); line-height: 1.5; margin-bottom: 28px; }
-
+ 
   .success-detail {
     background: var(--card);
     border: 1px solid var(--border);
@@ -398,7 +398,7 @@
     max-width: 340px;
     text-align: left;
   }
-
+ 
   .success-row {
     display: flex;
     justify-content: space-between;
@@ -406,11 +406,11 @@
     padding: 6px 0;
     font-size: 14px;
   }
-
+ 
   .success-row:not(:last-child) { border-bottom: 1px solid var(--border); }
   .success-row .sk { color: var(--muted); }
   .success-row .sv { font-weight: 500; font-family: 'DM Mono', monospace; font-size: 13px; }
-
+ 
   .again-btn {
     margin-top: 24px;
     background: none;
@@ -423,7 +423,7 @@
     color: var(--text);
     cursor: pointer;
   }
-
+ 
   .setup-screen { display: none; flex-direction: column; }
   .setup-input {
     width: 100%;
@@ -438,7 +438,7 @@
   }
   .setup-input:focus { border-color: var(--orange); }
   .setup-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
-
+ 
   .spinner {
     width: 20px; height: 20px;
     border: 2.5px solid rgba(255,255,255,0.4);
@@ -446,14 +446,14 @@
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
-
+ 
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-
+ 
 <div class="toast" id="toast"></div>
-
+ 
 <!-- SETUP SCREEN -->
 <div class="setup-screen" id="setupScreen">
   <div class="topbar">
@@ -473,7 +473,7 @@
     <button class="submit-btn" onclick="saveSetup()">Speichern &amp; starten <span>→</span></button>
   </div>
 </div>
-
+ 
 <!-- MAIN APP -->
 <div id="appWrapper" style="display:none; flex-direction:column; flex:1;">
   <div class="topbar">
@@ -485,9 +485,9 @@
       <span id="dateLabel">–</span>
     </div>
   </div>
-
+ 
   <div class="main" id="mainForm">
-
+ 
     <!-- DATUM / MODUS WAHL -->
     <div class="card">
       <div class="card-label">Eintrag für</div>
@@ -501,7 +501,7 @@
       </div>
       <div class="date-info" id="dateInfo"></div>
     </div>
-
+ 
     <!-- ARBEITSZEIT -->
     <div class="card">
       <div class="card-label">Arbeitszeit</div>
@@ -517,7 +517,7 @@
         </div>
       </div>
       <div class="duration-badge" id="durationBadge">Dauer wird berechnet…</div>
-
+ 
       <div class="pause-row">
         <div>
           <div class="pause-label">Pause</div>
@@ -530,7 +530,7 @@
         </select>
       </div>
     </div>
-
+ 
     <!-- ART DES TAGES -->
     <div class="card">
       <div class="card-label">Art des Tages</div>
@@ -552,24 +552,24 @@
         </button>
       </div>
     </div>
-
+ 
     <!-- BEMERKUNG -->
     <div class="card">
       <div class="card-label">Bemerkung</div>
       <textarea class="remark-textarea" id="remark" placeholder="z.B. Baustelle Spandau, Gerüstbau 2. OG – oder leer lassen"></textarea>
     </div>
-
+ 
     <!-- SUBMIT -->
     <button class="submit-btn" id="submitBtn" onclick="submitEntry()">
       <span id="btnText">Eintrag übertragen</span>
       <span id="btnArrow">→</span>
     </button>
-
+ 
     <div style="font-size:11px; color:var(--muted); text-align:center; padding-bottom:20px;">
       Daten werden sicher in Google Sheets gespeichert
     </div>
   </div>
-
+ 
   <!-- SUCCESS -->
   <div class="success-screen" id="successScreen">
     <div class="success-icon" id="successIcon">✓</div>
@@ -579,20 +579,20 @@
     <button class="again-btn" onclick="resetForm()">Weiteren Eintrag erstellen</button>
   </div>
 </div>
-
+ 
 <script>
 let employee = { name: '', pnr: '', company: '', scriptUrl: '' };
 let selectedType = 'Baustelle';
 let dateMode = 'heute'; // 'heute' | 'gestern' | 'korrektur'
 let selectedDate = new Date();
-
+ 
 function init() {
   const params = new URLSearchParams(window.location.search);
   employee.name      = params.get('name')    || localStorage.getItem('zt_name')    || '';
   employee.pnr       = params.get('pnr')     || localStorage.getItem('zt_pnr')     || '';
   employee.company   = params.get('company') || localStorage.getItem('zt_company') || '';
   employee.scriptUrl = params.get('url')     || localStorage.getItem('zt_url')     || '';
-
+ 
   if (!employee.name || !employee.scriptUrl) {
     document.getElementById('setupName').value    = employee.name;
     document.getElementById('setupPnr').value     = employee.pnr;
@@ -604,7 +604,7 @@ function init() {
     startApp();
   }
 }
-
+ 
 function saveSetup() {
   const name    = document.getElementById('setupName').value.trim();
   const pnr     = document.getElementById('setupPnr').value.trim();
@@ -620,19 +620,19 @@ function saveSetup() {
   document.getElementById('setupScreen').style.display = 'none';
   startApp();
 }
-
+ 
 function startApp() {
   document.getElementById('appWrapper').style.display = 'flex';
   document.getElementById('appWrapper').style.flexDirection = 'column';
   document.getElementById('empName').textContent    = employee.name;
   document.getElementById('empMeta').textContent    = employee.pnr ? `Nr. ${employee.pnr}` : 'Mitarbeiter';
   document.getElementById('companyLabel').textContent = employee.company || 'Zeiterfassung';
-
+ 
   const now = new Date();
   document.getElementById('dateLabel').textContent = now.toLocaleDateString('de-DE', {
     weekday: 'long', day: 'numeric', month: 'long'
   });
-
+ 
   // Korrektur-Dropdown befüllen (7 Tage zurück, heute ausgeschlossen)
   const sel = document.getElementById('korrekturDate');
   sel.innerHTML = '';
@@ -644,20 +644,20 @@ function startApp() {
     opt.textContent = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     sel.appendChild(opt);
   }
-
+ 
   // Default-Zeiten
   const pad = n => String(n).padStart(2, '0');
   const startH = Math.max(0, now.getHours() - 8);
   document.getElementById('timeStart').value = `${pad(startH)}:00`;
   document.getElementById('timeEnd').value   = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
+ 
   selectDateMode(document.getElementById('btnHeute'), 'heute');
-
+ 
   document.getElementById('timeStart').addEventListener('change', calcDuration);
   document.getElementById('timeEnd').addEventListener('change', calcDuration);
   document.getElementById('pauseSelect').addEventListener('change', calcDuration);
 }
-
+ 
 function selectDateMode(btn, mode) {
   document.querySelectorAll('.date-mode-grid .type-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -672,7 +672,7 @@ function selectDateMode(btn, mode) {
     info.textContent = '';
   }
 }
-
+ 
 function calcDuration() {
   const s = document.getElementById('timeStart').value;
   const e = document.getElementById('timeEnd').value;
@@ -688,18 +688,18 @@ function calcDuration() {
   const m = mins % 60;
   badge.innerHTML = `Arbeitszeit: <span>${h}h ${m > 0 ? m + 'min' : ''}</span>${pause > 0 ? ` (inkl. ${pause} Min. Pause)` : ''}`;
 }
-
+ 
 function selectType(btn) {
   document.querySelectorAll('.type-grid .type-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   selectedType = btn.dataset.type;
   const isAbsent = selectedType === 'Urlaub' || selectedType === 'Krank';
   const isKUG    = selectedType === 'KUG';
-
+ 
   document.getElementById('timeStart').disabled   = isAbsent;
   document.getElementById('timeEnd').disabled     = isAbsent;
   document.getElementById('pauseSelect').disabled = isAbsent || isKUG;
-
+ 
   if (isKUG) {
     document.getElementById('timeStart').value = '08:00';
     document.getElementById('timeEnd').value   = '16:00';
@@ -712,33 +712,33 @@ function selectType(btn) {
     calcDuration();
   }
 }
-
+ 
 async function submitEntry() {
   const start  = document.getElementById('timeStart').value;
   const end    = document.getElementById('timeEnd').value;
   const pause  = document.getElementById('pauseSelect').value;
   const remark = document.getElementById('remark').value.trim();
   const isAbsent = selectedType === 'Urlaub' || selectedType === 'Krank';
-
+ 
   if (!isAbsent && (!start || !end)) {
     showToast('Bitte Start- und Endzeit eingeben', 'error'); return;
   }
-
+ 
   if (dateMode === 'korrektur') updateKorrekturDate();
-
+ 
   const btn     = document.getElementById('submitBtn');
   const btnText = document.getElementById('btnText');
   const btnArrow = document.getElementById('btnArrow');
   btn.disabled = true;
   btnText.textContent = 'Wird übertragen…';
   btnArrow.innerHTML = '<div class="spinner"></div>';
-
+ 
   const now = new Date();
   const dateStr  = selectedDate.toLocaleDateString('de-DE');
   const weekday  = selectedDate.toLocaleDateString('de-DE', { weekday: 'long' });
   const timestamp = now.toLocaleString('de-DE');
   const isKorrektur = dateMode === 'korrektur';
-
+ 
   let netHours = '';
   if (!isAbsent && start && end) {
     const [sh, sm] = start.split(':').map(Number);
@@ -747,7 +747,7 @@ async function submitEntry() {
     if (mins < 0) mins += 1440;
     netHours = (mins / 60).toFixed(2);
   }
-
+ 
   const payload = {
     name:       employee.name,
     pnr:        employee.pnr,
@@ -763,14 +763,30 @@ async function submitEntry() {
     timestamp:  timestamp,
     korrektur:  isKorrektur ? 'JA' : ''
   };
-
+ 
   try {
     const qs = new URLSearchParams(payload).toString();
     const scriptUrl = employee.scriptUrl + '?' + qs;
-    // CORS-Proxy umgeht mobile Einschränkungen
-    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(scriptUrl);
-    const response = await fetch(proxyUrl);
-    const data = await response.json();
+ 
+    // Mehrere Proxies versuchen
+    const proxies = [
+      'https://corsproxy.io/?' + encodeURIComponent(scriptUrl),
+      'https://proxy.cors.sh/' + scriptUrl,
+    ];
+ 
+    let success = false;
+    for (const proxyUrl of proxies) {
+      try {
+        const response = await fetch(proxyUrl, { signal: AbortSignal.timeout(5000) });
+        if (response.ok) { success = true; break; }
+      } catch(e) {}
+    }
+ 
+    // Fallback: direkter Aufruf
+    if (!success) {
+      try { await fetch(scriptUrl, { mode: 'no-cors' }); } catch(e) {}
+    }
+ 
     showSuccess(payload, isKorrektur);
   } catch (err) {
     btn.disabled = false;
@@ -779,20 +795,20 @@ async function submitEntry() {
     showToast('Fehler beim Übertragen – Internetverbindung prüfen', 'error');
   }
 }
-
+ 
 function showSuccess(payload, isKorrektur) {
   document.getElementById('mainForm').style.display = 'none';
   const ss = document.getElementById('successScreen');
   ss.style.display = 'flex';
-
+ 
   const icon = document.getElementById('successIcon');
   icon.textContent = isKorrektur ? '✏️' : '✓';
   if (isKorrektur) icon.classList.add('korrektur');
-
+ 
   document.getElementById('successTitle').textContent = isKorrektur ? 'Korrektur gespeichert!' : 'Eingetragen!';
   document.getElementById('successSub').innerHTML =
     `${payload.name} · ${payload.date}${isKorrektur ? '<br><strong style="color:#9B1C1C">Korrektur-Eintrag</strong>' : '<br>Eintrag erfolgreich gespeichert.'}`;
-
+ 
   const isAbsent = payload.type === 'Urlaub' || payload.type === 'Krank';
   let rows = `
     <div class="success-row"><span class="sk">Art</span><span class="sv">${payload.type}</span></div>
@@ -805,7 +821,7 @@ function showSuccess(payload, isKorrektur) {
   `;
   document.getElementById('successDetail').innerHTML = rows;
 }
-
+ 
 function resetForm() {
   document.getElementById('mainForm').style.display = 'flex';
   document.getElementById('mainForm').style.flexDirection = 'column';
@@ -819,15 +835,16 @@ function resetForm() {
   selectDateMode(document.getElementById('btnHeute'), 'heute');
   calcDuration();
 }
-
+ 
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show ' + type;
   setTimeout(() => { t.className = 'toast'; }, 3500);
 }
-
+ 
 init();
 </script>
 </body>
 </html>
+ 
