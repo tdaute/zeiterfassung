@@ -597,7 +597,7 @@ function init() {
     document.getElementById('setupName').value    = employee.name;
     document.getElementById('setupPnr').value     = employee.pnr;
     document.getElementById('setupCompany').value = employee.company;
-    document.getElementById('setupUrl').value     = employee.scriptUrl || 'https://script.google.com/macros/s/AKfycbygZIrqaYaERY62E6bVNJdHrMlMEGAIxd3N6hCujB4CqncbQKZy4xlj20wmeKcOOL0y/exec';
+    document.getElementById('setupUrl').value     = employee.scriptUrl || 'https://script.google.com/macros/s/AKfycbw-1wSPMQVnP0qxoH-SLmZ4wcIDPp7T-YkXA3jEbD6MvOOBxRwfLMOqOcRzWPqfQWYB/exec';
     document.getElementById('setupScreen').style.display = 'flex';
     document.getElementById('setupScreen').style.flexDirection = 'column';
   } else {
@@ -766,26 +766,20 @@ async function submitEntry() {
  
   try {
     const qs = new URLSearchParams(payload).toString();
-    const scriptUrl = employee.scriptUrl + '?' + qs;
+    const scriptUrl = employee.scriptUrl + '?' + qs + '&callback=handleResponse';
  
-    // Mehrere Proxies versuchen
-    const proxies = [
-      'https://corsproxy.io/?' + encodeURIComponent(scriptUrl),
-      'https://proxy.cors.sh/' + scriptUrl,
-    ];
- 
-    let success = false;
-    for (const proxyUrl of proxies) {
-      try {
-        const response = await fetch(proxyUrl, { signal: AbortSignal.timeout(5000) });
-        if (response.ok) { success = true; break; }
-      } catch(e) {}
-    }
- 
-    // Fallback: direkter Aufruf
-    if (!success) {
-      try { await fetch(scriptUrl, { mode: 'no-cors' }); } catch(e) {}
-    }
+    // JSONP - funktioniert auf allen Geräten ohne CORS
+    await new Promise((resolve, reject) => {
+      window.handleResponse = function(data) {
+        delete window.handleResponse;
+        resolve(data);
+      };
+      const script = document.createElement('script');
+      script.src = scriptUrl;
+      script.onerror = resolve; // auch bei Fehler weitermachen
+      document.head.appendChild(script);
+      setTimeout(resolve, 6000); // Fallback nach 6 Sek
+    });
  
     showSuccess(payload, isKorrektur);
   } catch (err) {
@@ -847,4 +841,3 @@ init();
 </script>
 </body>
 </html>
- 
