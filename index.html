@@ -773,12 +773,10 @@ async function submitEntry() {
       const callbackName = 'cb_' + Date.now();
       window[callbackName] = function(data) {
         delete window[callbackName];
-        document.head.removeChild(script);
         resolve(data);
       };
       const script = document.createElement('script');
-      const qs2 = new URLSearchParams(payload).toString();
-      script.src = employee.scriptUrl + '?' + qs2 + '&callback=' + callbackName;
+      script.src = employee.scriptUrl + '?' + qs + '&callback=' + callbackName;
       script.onerror = function() { resolve({}); };
       document.head.appendChild(script);
       setTimeout(resolve, 8000);
