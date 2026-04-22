@@ -769,16 +769,19 @@ async function submitEntry() {
     const scriptUrl = employee.scriptUrl + '?' + qs + '&callback=handleResponse';
  
     // JSONP - funktioniert auf allen Geräten ohne CORS
-    await new Promise((resolve, reject) => {
-      window.handleResponse = function(data) {
-        delete window.handleResponse;
+    await new Promise((resolve) => {
+      const callbackName = 'cb_' + Date.now();
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.head.removeChild(script);
         resolve(data);
       };
       const script = document.createElement('script');
-      script.src = scriptUrl;
-      script.onerror = resolve; // auch bei Fehler weitermachen
+      const qs2 = new URLSearchParams(payload).toString();
+      script.src = employee.scriptUrl + '?' + qs2 + '&callback=' + callbackName;
+      script.onerror = function() { resolve({}); };
       document.head.appendChild(script);
-      setTimeout(resolve, 6000); // Fallback nach 6 Sek
+      setTimeout(resolve, 8000);
     });
  
     showSuccess(payload, isKorrektur);
