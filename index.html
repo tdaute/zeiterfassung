@@ -1,6 +1,3 @@
-
-Kopieren
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -770,30 +767,9 @@ async function submitEntry() {
   try {
     const callbackName = 'cb_' + Date.now();
     const qs = new URLSearchParams(payload).toString();
-    const scriptUrl = employee.scriptUrl + '?' + qs + '&callback=' + callbackName;
- 
-    showToast('Sende: ' + employee.scriptUrl.substring(0,40) + '...', '');
- 
-    // JSONP
-    const result = await new Promise((resolve) => {
-      window[callbackName] = function(data) {
-        delete window[callbackName];
-        resolve({ok: true, data});
-      };
-      const script = document.createElement('script');
-      script.src = scriptUrl;
-      script.onload = function() { showToast('Script geladen!', 'success'); };
-      script.onerror = function(e) { 
-        showToast('Script Fehler!', 'error');
-        resolve({ok: false}); 
-      };
-      document.head.appendChild(script);
-      setTimeout(() => resolve({ok: false, reason: 'timeout'}), 8000);
-    });
- 
-    showToast('Ergebnis: ' + JSON.stringify(result).substring(0,50), result.ok ? 'success' : 'error');
-    await new Promise(r => setTimeout(r, 2000));
- 
+    const scriptUrl = employee.scriptUrl + '?' + qs + '&callback=' + callbackNam  const qs = new URLSearchParams(payload).toString();
+    const response = await fetch('/submit?' + qs);
+    const result = await response.json();
     showSuccess(payload, isKorrektur);
   } catch (err) {
     btn.disabled = false;
