@@ -1,5 +1,5 @@
 export default async (request, context) => {
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-1wSPMQVnP0qxoH-SLmZ4wcIDPp7T-YkXA3jEbD6MvOOBxRwfLMOqOcRzWPqfQWYB/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznmXNjlkXYLllpFdgCYRktQECrp0UJ_LGPI5S6E4EivOzQsTzaQ4TyxObXSnjuRWZI/exec';
   
   const url = new URL(request.url);
   const params = url.searchParams.toString();
