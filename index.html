@@ -64,6 +64,15 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
 .setuplabel { font-size: 12px; font-weight: bold; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
 .setupinput { width: 100%; font-size: 15px; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; outline: none; font-family: Arial, sans-serif; }
 .setupinput:focus { border-color: var(--orange); }
+.overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+.overlay.show { display: flex; }
+.dialog { background: white; border-radius: 16px; padding: 24px; max-width: 340px; width: 100%; }
+.dialog-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: var(--text); }
+.dialog-text { font-size: 14px; color: var(--muted); line-height: 1.5; margin-bottom: 20px; }
+.dialog-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dialog-btn { padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
+.dialog-btn.cancel { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.dialog-btn.confirm { background: var(--orange); color: white; }
 .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #333; color: white; border-radius: 10px; padding: 12px 18px; font-size: 13px; transition: transform 0.3s; z-index: 100; white-space: nowrap; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 .toast.ok { background: var(--green); }
@@ -159,6 +168,18 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
     <div class="hint">Daten werden in Google Sheets gespeichert</div>
   </div>
  
+  <!-- Korrektur Dialog -->
+  <div class="overlay" id="korrekturOverlay">
+    <div class="dialog">
+      <div class="dialog-title">⚠️ Tag bereits gemeldet</div>
+      <div class="dialog-text" id="dialogText">Du hast diesen Arbeitstag bereits gemeldet. Möchtest du ihn erneut als <strong>Korrektur</strong> senden?</div>
+      <div class="dialog-btns">
+        <button class="dialog-btn cancel" onclick="closeDialog()">Abbrechen</button>
+        <button class="dialog-btn confirm" onclick="confirmKorrektur()">Ja, Korrektur senden</button>
+      </div>
+    </div>
+  </div>
+ 
   <div class="success" id="successScreen">
     <div class="successicon">✓</div>
     <div class="successtitle">Eingetragen!</div>
@@ -227,11 +248,23 @@ function startApp() {
   var now = new Date();
   document.getElementById('dateChip').textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
  
-  var startH = now.getHours() - 8;
-  if (startH < 0) startH = 7;
-  document.getElementById('tStart').value = pad(startH) + ':00';
-  document.getElementById('tEnd').value   = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  // Keine Zeiten vorausfüllen - Mitarbeiter trägt selbst ein
+  document.getElementById('tStart').value = '';
+  document.getElementById('tEnd').value   = '';
   calcDur();
+}
+ 
+// Gemeldete Tage im localStorage speichern
+function getDayKey(dateStr) {
+  return 'zt_day_' + emp.pnr + '_' + dateStr.replace(/\./g, '_');
+}
+ 
+function isDayReported(dateStr) {
+  return localStorage.getItem(getDayKey(dateStr)) === 'JA';
+}
+ 
+function markDayReported(dateStr) {
+  localStorage.setItem(getDayKey(dateStr), 'JA');
 }
  
 function setDateMode(btn, mode) {
@@ -244,6 +277,11 @@ function setDateMode(btn, mode) {
     document.getElementById('dateInfo').textContent = selDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
   } else {
     document.getElementById('dateInfo').textContent = '';
+  }
+  // Prüfen ob Tag bereits gemeldet
+  var dateStr = selDate.toLocaleDateString('de-DE');
+  if (isDayReported(dateStr)) {
+    document.getElementById('dateInfo').innerHTML = '<span style="color:#E8540A;font-weight:bold;">⚠️ Bereits gemeldet am ' + dateStr + '</span>';
   }
 }
  
@@ -284,6 +322,8 @@ function setType(btn) {
   }
 }
  
+var pendingPayload = null;
+ 
 function doSubmit() {
   var start  = document.getElementById('tStart').value;
   var end    = document.getElementById('tEnd').value;
@@ -292,6 +332,34 @@ function doSubmit() {
   var absent = selType === 'Urlaub' || selType === 'Krank';
  
   if (!absent && (!start || !end)) { showToast('Bitte Zeiten eingeben', 'err'); return; }
+ 
+  var dateStr = selDate.toLocaleDateString('de-DE');
+ 
+  // Prüfen ob Tag bereits gemeldet
+  if (isDayReported(dateStr)) {
+    document.getElementById('dialogText').innerHTML = 'Du hast den <strong>' + dateStr + '</strong> bereits gemeldet.<br><br>Möchtest du ihn erneut als <strong>Korrektur</strong> senden?';
+    document.getElementById('korrekturOverlay').classList.add('show');
+    return;
+  }
+ 
+  sendEntry(false);
+}
+ 
+function closeDialog() {
+  document.getElementById('korrekturOverlay').classList.remove('show');
+}
+ 
+function confirmKorrektur() {
+  closeDialog();
+  sendEntry(true);
+}
+ 
+function sendEntry(isKorrektur) {
+  var start  = document.getElementById('tStart').value;
+  var end    = document.getElementById('tEnd').value;
+  var pause  = document.getElementById('pauseSel').value;
+  var remark = document.getElementById('remark').value.trim();
+  var absent = selType === 'Urlaub' || selType === 'Krank';
  
   var btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -323,7 +391,7 @@ function doSubmit() {
     type:      selType,
     remark:    remark,
     timestamp: timestamp,
-    korrektur: ''
+    korrektur: isKorrektur ? 'KORREKTUR' : ''
   };
  
   var qs = '';
@@ -342,10 +410,15 @@ function doSubmit() {
 }
  
 function showSuccessScreen(payload) {
+  // Tag als gemeldet markieren
+  markDayReported(payload.date);
+ 
   document.getElementById('mainForm').style.display = 'none';
   document.getElementById('successScreen').style.display = 'flex';
   document.getElementById('successScreen').style.flexDirection = 'column';
-  document.getElementById('successSub').innerHTML = payload.name + ' · ' + payload.date + '<br>Eintrag gespeichert.';
+  var subText = payload.name + ' · ' + payload.date + '<br>';
+  subText += payload.korrektur === 'KORREKTUR' ? '<span style="color:#E8540A;font-weight:bold;">Korrektur gespeichert</span>' : 'Eintrag gespeichert.';
+  document.getElementById('successSub').innerHTML = subText;
  
   var absent = payload.type === 'Urlaub' || payload.type === 'Krank';
   var html = '<div class="srow"><span class="sk">Art</span><span class="sv">' + payload.type + '</span></div>';
@@ -366,6 +439,8 @@ function resetForm() {
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('submitBtn').textContent = 'Eintrag übertragen →';
   document.getElementById('remark').value = '';
+  document.getElementById('tStart').value = '';
+  document.getElementById('tEnd').value = '';
   setDateMode(document.getElementById('btnHeute'), 'heute');
   var btns = document.querySelectorAll('[data-type]');
   for (var i = 0; i < btns.length; i++) btns[i].className = 'typebtn';
