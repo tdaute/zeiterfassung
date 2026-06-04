@@ -363,7 +363,13 @@ function calcUeberstunden() {
   if (ue > 8) { ue = 8; input.value = 8; }
   var rest = Math.max(0, 8 - ue);
   var result = document.getElementById('ueResult');
-  if (ue >= 8) {
+  var ganzerTag = ue >= 8;
+ 
+  // Startzeit ein/ausblenden
+  var startField = document.getElementById('tStart');
+  startField.disabled = ganzerTag;
+  if (ganzerTag) {
+    startField.value = '';
     result.innerHTML = 'Ganzer Tag Überstunden — <b>0h Arbeitszeit</b>';
   } else {
     result.innerHTML = 'Überstunden: <b>' + ue + 'h</b> — Verbleibende Arbeitszeit: <b>' + rest.toFixed(1) + 'h</b>';
@@ -433,7 +439,7 @@ function sendEntry(isKorrektur) {
     var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
     var restH = Math.max(0, 8 - ueH);
     netHours = restH.toFixed(2);
-    payloadStart = '';
+    payloadStart = ueH < 8 ? start : '';  // Startzeit nur wenn kein ganzer Tag
     payloadEnd = '';
     payloadPause = '';
     payloadRemark = ueH + 'h Überstunden genommen' + (remark ? ' — ' + remark : '');
