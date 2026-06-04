@@ -73,6 +73,16 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
 .dialog-btn { padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
 .dialog-btn.cancel { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
 .dialog-btn.confirm { background: var(--orange); color: white; }
+.ueberstunden-input { display: none; margin-top: 12px; background: var(--bg); border-radius: 10px; padding: 12px 14px; }
+.ueberstunden-input.show { display: block; }
+.ue-label { font-size: 13px; font-weight: bold; color: var(--text); margin-bottom: 8px; }
+.ue-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.ue-row { display: flex; align-items: center; gap: 10px; }
+.ue-number { font-size: 22px; font-weight: bold; border: 1.5px solid var(--border); background: white; border-radius: 8px; padding: 8px 12px; width: 80px; text-align: center; outline: none; -webkit-appearance: none; }
+.ue-number:focus { border-color: var(--orange); }
+.ue-suffix { font-size: 14px; color: var(--muted); font-weight: bold; }
+.ue-result { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.ue-result b { color: var(--orange); }
 .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #333; color: white; border-radius: 10px; padding: 12px 18px; font-size: 13px; transition: transform 0.3s; z-index: 100; white-space: nowrap; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 .toast.ok { background: var(--green); }
@@ -80,9 +90,9 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
 </style>
 </head>
 <body>
-
+ 
 <div class="toast" id="toast"></div>
-
+ 
 <div class="setupscreen" id="setupScreen">
   <div class="topbar">
     <div class="company">Zeiterfassung</div>
@@ -101,7 +111,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
     <button class="submitbtn" onclick="saveSetup()">Speichern & starten</button>
   </div>
 </div>
-
+ 
 <div id="appWrapper" style="display:none;">
   <div class="topbar">
     <div class="company" id="companyLabel">Firma</div>
@@ -109,9 +119,9 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
     <div class="empmeta" id="empMeta">–</div>
     <div class="datechip" id="dateChip">–</div>
   </div>
-
+ 
   <div class="main" id="mainForm">
-
+ 
     <div class="card">
       <div class="cardlabel">Eintrag für</div>
       <div class="grid2">
@@ -120,7 +130,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
       </div>
       <div class="dateinfo" id="dateInfo"></div>
     </div>
-
+ 
     <div class="card">
       <div class="cardlabel">Arbeitszeit</div>
       <div class="timerow">
@@ -147,7 +157,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
         </select>
       </div>
     </div>
-
+ 
     <div class="card">
       <div class="cardlabel">Art des Tages</div>
       <div class="grid2">
@@ -155,19 +165,31 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
         <button class="typebtn" data-type="KUG" onclick="setType(this)">📉 KUG</button>
         <button class="typebtn" data-type="Urlaub" onclick="setType(this)">🌴 Urlaub</button>
         <button class="typebtn" data-type="Krank" onclick="setType(this)">🤒 Krank</button>
-        <button class="typebtn" data-type="Sonstiges" onclick="setType(this)" style="grid-column:span 2">📋 Sonstiges</button>
+        <button class="typebtn" data-type="Überstunden" onclick="setType(this)">⏱️ Überstunden</button>
+        <button class="typebtn" data-type="Sonstiges" onclick="setType(this)">📋 Sonstiges</button>
+ 
+      <!-- Überstunden Eingabe -->
+      <div class="ueberstunden-input" id="ueberstundenInput">
+        <div class="ue-label">Wie viele Überstunden nimmst du heute?</div>
+        <div class="ue-row">
+          <input class="ue-number" type="number" id="ueStunden" min="0.5" max="8" step="0.5" value="1" oninput="calcUeberstunden()">
+          <span class="ue-suffix">Stunden</span>
+        </div>
+        <div class="ue-result" id="ueResult"></div>
+        <div class="ue-hint">Rest des Tages wird als Arbeitszeit berechnet (8h - Überstunden)</div>
+      </div>
       </div>
     </div>
-
+ 
     <div class="card">
       <div class="cardlabel">Bemerkung</div>
       <textarea class="textarea" id="remark" placeholder="z.B. Baustelle Spandau, Gerüstbau 2. OG"></textarea>
     </div>
-
+ 
     <button class="submitbtn" id="submitBtn" onclick="doSubmit()">Eintrag übertragen →</button>
     <div class="hint">Daten werden in Google Sheets gespeichert</div>
   </div>
-
+ 
   <!-- Korrektur Dialog -->
   <div class="overlay" id="korrekturOverlay">
     <div class="dialog">
@@ -179,7 +201,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
       </div>
     </div>
   </div>
-
+ 
   <div class="success" id="successScreen">
     <div class="successicon">✓</div>
     <div class="successtitle">Eingetragen!</div>
@@ -188,29 +210,29 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
     <button class="againbtn" onclick="resetForm()">Weiteren Eintrag</button>
   </div>
 </div>
-
+ 
 <script>
 var emp = { name: '', pnr: '', company: '', url: '' };
 var selType = 'Baustelle';
 var dateMode = 'heute';
 var selDate = new Date();
-
+ 
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
-
+ 
 function showToast(msg, cls) {
   var t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (cls ? ' ' + cls : '');
   setTimeout(function() { t.className = 'toast'; }, 3000);
 }
-
+ 
 function init() {
   var p = new URLSearchParams(window.location.search);
   emp.name    = p.get('name')    || localStorage.getItem('zt_name')    || '';
   emp.pnr     = p.get('pnr')     || localStorage.getItem('zt_pnr')     || '';
   emp.company = p.get('company') || localStorage.getItem('zt_company') || '';
   emp.url     = p.get('url')     || localStorage.getItem('zt_url')     || '';
-
+ 
   if (!emp.name || !emp.url) {
     document.getElementById('sName').value    = emp.name;
     document.getElementById('sPnr').value     = emp.pnr;
@@ -222,7 +244,7 @@ function init() {
     startApp();
   }
 }
-
+ 
 function saveSetup() {
   var name    = document.getElementById('sName').value.trim();
   var pnr     = document.getElementById('sPnr').value.trim();
@@ -238,35 +260,35 @@ function saveSetup() {
   document.getElementById('setupScreen').style.display = 'none';
   startApp();
 }
-
+ 
 function startApp() {
   document.getElementById('appWrapper').style.display = 'block';
   document.getElementById('empName').textContent    = emp.name;
   document.getElementById('empMeta').textContent    = emp.pnr ? 'Nr. ' + emp.pnr : 'Mitarbeiter';
   document.getElementById('companyLabel').textContent = emp.company || 'Zeiterfassung';
-
+ 
   var now = new Date();
   document.getElementById('dateChip').textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
-
+ 
   // Keine Zeiten vorausfüllen - Mitarbeiter trägt selbst ein
   document.getElementById('tStart').value = '';
   document.getElementById('tEnd').value   = '';
   calcDur();
 }
-
+ 
 // Gemeldete Tage im localStorage speichern
 function getDayKey(dateStr) {
   return 'zt_day_' + emp.pnr + '_' + dateStr.replace(/\./g, '_');
 }
-
+ 
 function isDayReported(dateStr) {
   return localStorage.getItem(getDayKey(dateStr)) === 'JA';
 }
-
+ 
 function markDayReported(dateStr) {
   localStorage.setItem(getDayKey(dateStr), 'JA');
 }
-
+ 
 function setDateMode(btn, mode) {
   document.getElementById('btnHeute').className   = 'typebtn' + (mode === 'heute'   ? ' active' : '');
   document.getElementById('btnGestern').className = 'typebtn' + (mode === 'gestern' ? ' active' : '');
@@ -284,7 +306,7 @@ function setDateMode(btn, mode) {
     document.getElementById('dateInfo').innerHTML = '<span style="color:#E8540A;font-weight:bold;">⚠️ Bereits gemeldet am ' + dateStr + '</span>';
   }
 }
-
+ 
 function calcDur() {
   var s = document.getElementById('tStart').value;
   var e = document.getElementById('tEnd').value;
@@ -298,139 +320,171 @@ function calcDur() {
   var h = Math.floor(mins / 60), m = mins % 60;
   lbl.innerHTML = 'Arbeitszeit: <b>' + h + 'h' + (m > 0 ? ' ' + m + 'min' : '') + '</b>' + (pause > 0 ? ' (inkl. ' + pause + ' Min. Pause)' : '');
 }
-
+ 
 function setType(btn) {
   var btns = document.querySelectorAll('[data-type]');
   for (var i = 0; i < btns.length; i++) btns[i].className = 'typebtn';
   btn.className = 'typebtn active';
   selType = btn.getAttribute('data-type');
-
-  var absent = selType === 'Urlaub' || selType === 'Krank';
-  document.getElementById('tStart').disabled   = absent;
-  document.getElementById('tEnd').disabled     = absent;
-  document.getElementById('pauseSel').disabled = absent || selType === 'KUG';
-
-  if (selType === 'KUG') {
+ 
+  var absent         = selType === 'Urlaub' || selType === 'Krank';
+  var isKUG          = selType === 'KUG';
+  var isUeberstunden = selType === 'Überstunden';
+ 
+  // Überstunden-Eingabe ein/ausblenden
+  var ueInput = document.getElementById('ueberstundenInput');
+  ueInput.className = isUeberstunden ? 'ueberstunden-input show' : 'ueberstunden-input';
+ 
+  document.getElementById('tStart').disabled   = absent || isUeberstunden;
+  document.getElementById('tEnd').disabled     = absent || isUeberstunden;
+  document.getElementById('pauseSel').disabled = absent || isKUG || isUeberstunden;
+ 
+  if (isKUG) {
     document.getElementById('tStart').value = '08:00';
     document.getElementById('tEnd').value   = '16:00';
     document.getElementById('pauseSel').value = '0';
     calcDur();
+  } else if (isUeberstunden) {
+    document.getElementById('tStart').value = '';
+    document.getElementById('tEnd').value   = '';
+    document.getElementById('durLabel').textContent = '–';
+    calcUeberstunden();
   } else if (absent) {
     document.getElementById('durLabel').textContent = selType + ' – kein Arbeitstag';
   } else {
     calcDur();
   }
 }
-
+ 
+function calcUeberstunden() {
+  var ue = parseFloat(document.getElementById('ueStunden').value) || 0;
+  if (ue < 0) ue = 0;
+  if (ue > 8) ue = 8;
+  var rest = Math.max(0, 8 - ue);
+  var result = document.getElementById('ueResult');
+  if (ue >= 8) {
+    result.innerHTML = 'Ganzer Tag Überstunden — <b>0h Arbeitszeit</b>';
+  } else {
+    result.innerHTML = 'Überstunden: <b>' + ue + 'h</b> — Verbleibende Arbeitszeit: <b>' + rest.toFixed(1) + 'h</b>';
+  }
+}
+ 
 var pendingPayload = null;
-
+ 
 function doSubmit() {
   var start  = document.getElementById('tStart').value;
   var end    = document.getElementById('tEnd').value;
   var pause  = document.getElementById('pauseSel').value;
   var remark = document.getElementById('remark').value.trim();
   var absent = selType === 'Urlaub' || selType === 'Krank';
-
-  if (!absent && (!start || !end)) { showToast('Bitte Zeiten eingeben', 'err'); return; }
-
+ 
+  var isUeberstunden = selType === 'Überstunden';
+  if (!absent && !isUeberstunden && (!start || !end)) { showToast('Bitte Zeiten eingeben', 'err'); return; }
+  if (isUeberstunden) {
+    var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
+    if (ueH <= 0) { showToast('Bitte Überstunden eingeben', 'err'); return; }
+  }
+ 
   var dateStr = selDate.toLocaleDateString('de-DE');
-
+ 
   // Prüfen ob Tag bereits gemeldet
   if (isDayReported(dateStr)) {
     document.getElementById('dialogText').innerHTML = 'Du hast den <strong>' + dateStr + '</strong> bereits gemeldet.<br><br>Möchtest du ihn erneut als <strong>Korrektur</strong> senden?';
     document.getElementById('korrekturOverlay').classList.add('show');
     return;
   }
-
+ 
   sendEntry(false);
 }
-
+ 
 function closeDialog() {
   document.getElementById('korrekturOverlay').classList.remove('show');
 }
-
+ 
 function confirmKorrektur() {
   closeDialog();
   sendEntry(true);
 }
-
+ 
 function sendEntry(isKorrektur) {
   var start  = document.getElementById('tStart').value;
   var end    = document.getElementById('tEnd').value;
   var pause  = document.getElementById('pauseSel').value;
   var remark = document.getElementById('remark').value.trim();
   var absent = selType === 'Urlaub' || selType === 'Krank';
-
+ 
   var btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = 'Wird übertragen…';
-
+ 
   var now = new Date();
   var dateStr  = selDate.toLocaleDateString('de-DE');
   var weekday  = selDate.toLocaleDateString('de-DE', { weekday: 'long' });
   var timestamp = now.toLocaleString('de-DE');
-
+ 
   var netHours = '';
-  if (!absent && start && end) {
+  var payloadStart = start;
+  var payloadEnd = end;
+  var payloadPause = absent ? '' : pause + ' Min.';
+  var payloadRemark = remark;
+ 
+  if (isUeberstunden) {
+    var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
+    var restH = Math.max(0, 8 - ueH);
+    netHours = restH.toFixed(2);
+    payloadStart = '';
+    payloadEnd = '';
+    payloadPause = '';
+    payloadRemark = ueH + 'h Überstunden genommen' + (remark ? ' — ' + remark : '');
+  } else if (!absent && start && end) {
     var sh = parseInt(start.split(':')[0]), sm = parseInt(start.split(':')[1]);
     var eh = parseInt(end.split(':')[0]),   em = parseInt(end.split(':')[1]);
     var mins = (eh * 60 + em) - (sh * 60 + sm) - parseInt(pause);
     if (mins > 0) netHours = (mins / 60).toFixed(2);
   }
-
+ 
   var payload = {
     name:      emp.name,
     pnr:       emp.pnr,
     company:   emp.company,
     date:      dateStr,
     weekday:   weekday,
-    start:     absent ? '' : start,
-    end:       absent ? '' : end,
-    pause:     absent ? '' : pause + ' Min.',
+    start:     payloadStart,
+    end:       payloadEnd,
+    pause:     payloadPause,
     netHours:  netHours,
     type:      selType,
-    remark:    remark,
+    remark:    payloadRemark,
     timestamp: timestamp,
     korrektur: isKorrektur ? 'KORREKTUR' : ''
   };
-
+ 
   var qs = '';
   var keys = Object.keys(payload);
   for (var i = 0; i < keys.length; i++) {
     if (qs) qs += '&';
     qs += encodeURIComponent(keys[i]) + '=' + encodeURIComponent(payload[keys[i]]);
   }
-
+ 
   var img = new Image();
   img.onload = function() { showSuccessScreen(payload); };
   img.onerror = function() { showSuccessScreen(payload); };
   img.src = emp.url + '?' + qs;
-
-  // --- Zusätzlich nach Supabase schreiben (Portal/Admin-Datenbasis) ---
-  // Stört den gewohnten Ablauf NICHT: Fehler werden still geschluckt,
-  // der Sheet-Pfad (Image-Beacon oben) bleibt die Absicherung.
-  try {
-    fetch('https://yjbphyeupnjwzjjkhsih.supabase.co/functions/v1/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).catch(function(){ /* offline o.ä. – egal, Sheet hat die Daten */ });
-  } catch (e) { /* niemals den Erfolgsablauf blockieren */ }
-
+ 
   setTimeout(function() { showSuccessScreen(payload); }, 6000);
 }
-
+ 
 function showSuccessScreen(payload) {
   // Tag als gemeldet markieren
   markDayReported(payload.date);
-
+ 
   document.getElementById('mainForm').style.display = 'none';
   document.getElementById('successScreen').style.display = 'flex';
   document.getElementById('successScreen').style.flexDirection = 'column';
   var subText = payload.name + ' · ' + payload.date + '<br>';
   subText += payload.korrektur === 'KORREKTUR' ? '<span style="color:#E8540A;font-weight:bold;">Korrektur gespeichert</span>' : 'Eintrag gespeichert.';
   document.getElementById('successSub').innerHTML = subText;
-
+ 
   var absent = payload.type === 'Urlaub' || payload.type === 'Krank';
   var html = '<div class="srow"><span class="sk">Art</span><span class="sv">' + payload.type + '</span></div>';
   if (!absent) {
@@ -442,7 +496,7 @@ function showSuccessScreen(payload) {
   if (payload.remark) html += '<div class="srow"><span class="sk">Bemerkung</span><span class="sv">' + payload.remark + '</span></div>';
   document.getElementById('successDetail').innerHTML = html;
 }
-
+ 
 function resetForm() {
   document.getElementById('mainForm').style.display = 'flex';
   document.getElementById('mainForm').style.flexDirection = 'column';
@@ -452,6 +506,8 @@ function resetForm() {
   document.getElementById('remark').value = '';
   document.getElementById('tStart').value = '';
   document.getElementById('tEnd').value = '';
+  document.getElementById('ueStunden').value = '1';
+  document.getElementById('ueberstundenInput').className = 'ueberstunden-input';
   setDateMode(document.getElementById('btnHeute'), 'heute');
   var btns = document.querySelectorAll('[data-type]');
   for (var i = 0; i < btns.length; i++) btns[i].className = 'typebtn';
@@ -462,7 +518,7 @@ function resetForm() {
   document.getElementById('pauseSel').disabled = false;
   calcDur();
 }
-
+ 
 init();
 </script>
 </body>
