@@ -357,9 +357,10 @@ function setType(btn) {
 }
  
 function calcUeberstunden() {
-  var ue = parseFloat(document.getElementById('ueStunden').value) || 0;
-  if (ue < 0) ue = 0;
-  if (ue > 8) ue = 8;
+  var input = document.getElementById('ueStunden');
+  var ue = parseFloat(input.value) || 0;
+  if (ue < 0) { ue = 0; input.value = 0; }
+  if (ue > 8) { ue = 8; input.value = 8; }
   var rest = Math.max(0, 8 - ue);
   var result = document.getElementById('ueResult');
   if (ue >= 8) {
