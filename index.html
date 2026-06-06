@@ -418,7 +418,8 @@ function sendEntry(isKorrektur) {
   var end    = document.getElementById('tEnd').value;
   var pause  = document.getElementById('pauseSel').value;
   var remark = document.getElementById('remark').value.trim();
-  var absent = selType === 'Urlaub' || selType === 'Krank';
+  var absent         = selType === 'Urlaub' || selType === 'Krank';
+  var isUeberstunden = selType === 'Überstunden';
  
   var btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -473,12 +474,14 @@ function sendEntry(isKorrektur) {
     qs += encodeURIComponent(keys[i]) + '=' + encodeURIComponent(payload[keys[i]]);
   }
  
-  var img = new Image();
-  img.onload = function() { showSuccessScreen(payload); };
-  img.onerror = function() { showSuccessScreen(payload); };
-  img.src = emp.url + '?' + qs;
- 
-  setTimeout(function() { showSuccessScreen(payload); }, 6000);
+  // Edge Function Proxy verwenden (zuverlässig auf allen Geräten)
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/submit?' + qs, true);
+  xhr.onload = function() { showSuccessScreen(payload); };
+  xhr.onerror = function() { showSuccessScreen(payload); };
+  xhr.timeout = 10000;
+  xhr.ontimeout = function() { showSuccessScreen(payload); };
+  xhr.send();
 }
  
 function showSuccessScreen(payload) {
