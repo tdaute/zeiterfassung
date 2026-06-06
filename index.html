@@ -335,7 +335,7 @@ function setType(btn) {
   var ueInput = document.getElementById('ueberstundenInput');
   ueInput.className = isUeberstunden ? 'ueberstunden-input show' : 'ueberstunden-input';
  
-  document.getElementById('tStart').disabled   = absent || isUeberstunden;
+  document.getElementById('tStart').disabled   = absent;  // Überstunden: calcUeberstunden steuert das
   document.getElementById('tEnd').disabled     = absent || isUeberstunden;
   document.getElementById('pauseSel').disabled = absent || isKUG || isUeberstunden;
  
@@ -440,7 +440,9 @@ function sendEntry(isKorrektur) {
     var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
     var restH = Math.max(0, 8 - ueH);
     netHours = restH.toFixed(2);
-    payloadStart = ueH < 8 ? start : '';  // Startzeit nur wenn kein ganzer Tag
+    // Startzeit direkt aus dem DOM lesen (nicht aus der Variable die vor disabled gesetzt wurde)
+    var ueStart = document.getElementById('tStart').value || start;
+    payloadStart = (ueH < 8 && ueStart) ? ueStart : '';
     payloadEnd = '';
     payloadPause = '';
     payloadRemark = ueH + 'h Überstunden genommen' + (remark ? ' — ' + remark : '');
