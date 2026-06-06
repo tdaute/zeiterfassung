@@ -136,7 +136,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
       <div class="timerow">
         <div>
           <div class="timelabel">Beginn</div>
-          <input class="timeinput" type="time" id="tStart" onchange="calcDur()">
+          <input class="timeinput" type="time" id="tStart" onchange="savedStartTime=this.value; calcDur()">
         </div>
         <div class="sep">–</div>
         <div>
@@ -216,6 +216,7 @@ var emp = { name: '', pnr: '', company: '', url: '' };
 var selType = 'Baustelle';
 var dateMode = 'heute';
 var selDate = new Date();
+var savedStartTime = '';  // Startzeit für Überstunden
  
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
  
@@ -443,11 +444,7 @@ function sendEntry(isKorrektur) {
     var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
     var restH = Math.max(0, 8 - ueH);
     netHours = restH.toFixed(2);
-    // disabled kurz aufheben um den Wert zu lesen
-    var startEl2 = document.getElementById('tStart');
-    startEl2.disabled = false;
-    var ueStart = startEl2.value || '';
-    payloadStart = (ueH < 8 && ueStart) ? ueStart : '';
+    payloadStart = (ueH < 8 && savedStartTime) ? savedStartTime : '';
     payloadEnd = '';
     payloadPause = '';
     payloadRemark = ueH + 'h Überstunden genommen' + (remark ? ' — ' + remark : '');
@@ -524,6 +521,7 @@ function resetForm() {
   document.getElementById('tStart').value = '';
   document.getElementById('tEnd').value = '';
   document.getElementById('ueStunden').value = '1';
+  savedStartTime = '';
   document.getElementById('ueberstundenInput').className = 'ueberstunden-input';
   setDateMode(document.getElementById('btnHeute'), 'heute');
   var btns = document.querySelectorAll('[data-type]');
