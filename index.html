@@ -126,7 +126,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
       <div class="cardlabel">Eintrag für</div>
       <div class="grid2">
         <button class="typebtn active" id="btnHeute" onclick="setDateMode(this,'heute')">📅 Heute</button>
-        <button class="typebtn" id="btnGestern" onclick="setDateMode(this,'gestern')">🔄 Gestern</button>
+        <button class="typebtn" id="btnGestern" onclick="setDateMode(this,'letzter')">🔄 Letzter Arbeitstag</button>
       </div>
       <div class="dateinfo" id="dateInfo"></div>
     </div>
@@ -290,13 +290,23 @@ function markDayReported(dateStr) {
   localStorage.setItem(getDayKey(dateStr), 'JA');
 }
  
+function getLastWorkday() {
+  var d = new Date();
+  d.setDate(d.getDate() - 1);
+  // Wenn Sonntag → Freitag, wenn Samstag → Freitag
+  while (d.getDay() === 0 || d.getDay() === 6) {
+    d.setDate(d.getDate() - 1);
+  }
+  return d;
+}
+ 
 function setDateMode(btn, mode) {
   document.getElementById('btnHeute').className   = 'typebtn' + (mode === 'heute'   ? ' active' : '');
-  document.getElementById('btnGestern').className = 'typebtn' + (mode === 'gestern' ? ' active' : '');
+  document.getElementById('btnGestern').className = 'typebtn' + (mode === 'letzter' ? ' active' : '');
   dateMode = mode;
   selDate = new Date();
-  if (mode === 'gestern') {
-    selDate.setDate(selDate.getDate() - 1);
+  if (mode === 'letzter') {
+    selDate = getLastWorkday();
     document.getElementById('dateInfo').textContent = selDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
   } else {
     document.getElementById('dateInfo').textContent = '';
@@ -336,7 +346,7 @@ function setType(btn) {
   var ueInput = document.getElementById('ueberstundenInput');
   ueInput.className = isUeberstunden ? 'ueberstunden-input show' : 'ueberstunden-input';
  
-  document.getElementById('tStart').disabled   = absent;  // Überstunden: calcUeberstunden steuert das
+  document.getElementById('tStart').disabled   = absent;
   document.getElementById('tEnd').disabled     = absent || isUeberstunden;
   document.getElementById('pauseSel').disabled = absent || isKUG || isUeberstunden;
  
@@ -346,7 +356,6 @@ function setType(btn) {
     document.getElementById('pauseSel').value = '0';
     calcDur();
   } else if (isUeberstunden) {
-    document.getElementById('tStart').value = '';
     document.getElementById('tEnd').value   = '';
     document.getElementById('durLabel').textContent = '–';
     calcUeberstunden();
@@ -366,11 +375,7 @@ function calcUeberstunden() {
   var result = document.getElementById('ueResult');
   var ganzerTag = ue >= 8;
  
-  // Startzeit ein/ausblenden
-  var startField = document.getElementById('tStart');
-  startField.disabled = ganzerTag;
   if (ganzerTag) {
-    startField.value = '';
     result.innerHTML = 'Ganzer Tag Überstunden — <b>0h Arbeitszeit</b>';
   } else {
     result.innerHTML = 'Überstunden: <b>' + ue + 'h</b> — Verbleibende Arbeitszeit: <b>' + rest.toFixed(1) + 'h</b>';
@@ -444,7 +449,8 @@ function sendEntry(isKorrektur) {
     var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
     var restH = Math.max(0, 8 - ueH);
     netHours = restH.toFixed(2);
-    payloadStart = (ueH < 8 && savedStartTime) ? savedStartTime : '';
+    var ueStartVal = document.getElementById('tStart').value;
+    payloadStart = (ueH < 8 && ueStartVal) ? ueStartVal : '';
     payloadEnd = '';
     payloadPause = '';
     payloadRemark = ueH + 'h Überstunden genommen' + (remark ? ' — ' + remark : '');
