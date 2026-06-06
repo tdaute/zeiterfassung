@@ -414,8 +414,11 @@ function confirmKorrektur() {
 }
  
 function sendEntry(isKorrektur) {
-  var start  = document.getElementById('tStart').value;
-  var end    = document.getElementById('tEnd').value;
+  // Werte direkt aus DOM lesen - disabled-Attribut ignorieren via getAttribute
+  var startEl = document.getElementById('tStart');
+  var endEl   = document.getElementById('tEnd');
+  var start  = startEl.value || '';
+  var end    = endEl.value   || '';
   var pause  = document.getElementById('pauseSel').value;
   var remark = document.getElementById('remark').value.trim();
   var absent         = selType === 'Urlaub' || selType === 'Krank';
@@ -440,8 +443,10 @@ function sendEntry(isKorrektur) {
     var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
     var restH = Math.max(0, 8 - ueH);
     netHours = restH.toFixed(2);
-    // Startzeit direkt aus dem DOM lesen (nicht aus der Variable die vor disabled gesetzt wurde)
-    var ueStart = document.getElementById('tStart').value || start;
+    // disabled kurz aufheben um den Wert zu lesen
+    var startEl2 = document.getElementById('tStart');
+    startEl2.disabled = false;
+    var ueStart = startEl2.value || '';
     payloadStart = (ueH < 8 && ueStart) ? ueStart : '';
     payloadEnd = '';
     payloadPause = '';
