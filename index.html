@@ -73,15 +73,23 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
 .dialog-btn { padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
 .dialog-btn.cancel { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
 .dialog-btn.confirm { background: var(--orange); color: white; }
-.ueberstunden-input { display: none; margin-top: 12px; background: var(--bg); border-radius: 10px; padding: 12px 14px; }
-.ueberstunden-input.show { display: block; }
-.ue-label { font-size: 13px; font-weight: bold; color: var(--text); margin-bottom: 8px; }
-.ue-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+/* Überstunden-genommen-Feld (an Baustelle gekoppelt) */
+.ue-toggle { display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-top: 10px; cursor: pointer; }
+.ue-toggle-label { font-size: 14px; font-weight: bold; }
+.ue-toggle-sub { font-size: 12px; color: var(--muted); }
+.switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: var(--border); border-radius: 26px; transition: .2s; }
+.slider:before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; }
+.switch input:checked + .slider { background: var(--orange); }
+.switch input:checked + .slider:before { transform: translateX(20px); }
+.ue-input { display: none; margin-top: 10px; background: var(--orange-light); border-radius: 10px; padding: 12px 14px; }
+.ue-input.show { display: block; }
 .ue-row { display: flex; align-items: center; gap: 10px; }
 .ue-number { font-size: 22px; font-weight: bold; border: 1.5px solid var(--border); background: white; border-radius: 8px; padding: 8px 12px; width: 80px; text-align: center; outline: none; -webkit-appearance: none; }
 .ue-number:focus { border-color: var(--orange); }
 .ue-suffix { font-size: 14px; color: var(--muted); font-weight: bold; }
-.ue-result { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.ue-result { font-size: 13px; color: var(--text); margin-top: 10px; line-height: 1.5; }
 .ue-result b { color: var(--orange); }
 .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: #333; color: white; border-radius: 10px; padding: 12px 18px; font-size: 13px; transition: transform 0.3s; z-index: 100; white-space: nowrap; }
 .toast.show { transform: translateX(-50%) translateY(0); }
@@ -90,9 +98,9 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
 </style>
 </head>
 <body>
- 
+
 <div class="toast" id="toast"></div>
- 
+
 <div class="setupscreen" id="setupScreen">
   <div class="topbar">
     <div class="company">Zeiterfassung</div>
@@ -108,10 +116,10 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
       <input class="setupinput" id="sUrl" placeholder="https://script.google.com/..." style="font-size:11px;">
       <div style="font-size:11px;color:var(--muted);margin-top:4px;">Vom Administrator erhalten</div>
     </div>
-    <button class="submitbtn" onclick="saveSetup()">Speichern & starten</button>
+    <button class="submitbtn" onclick="saveSetup()">Speichern &amp; starten</button>
   </div>
 </div>
- 
+
 <div id="appWrapper" style="display:none;">
   <div class="topbar">
     <div class="company" id="companyLabel">Firma</div>
@@ -119,9 +127,9 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
     <div class="empmeta" id="empMeta">–</div>
     <div class="datechip" id="dateChip">–</div>
   </div>
- 
+
   <div class="main" id="mainForm">
- 
+
     <div class="card">
       <div class="cardlabel">Eintrag für</div>
       <div class="grid2">
@@ -130,7 +138,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
       </div>
       <div class="dateinfo" id="dateInfo"></div>
     </div>
- 
+
     <div class="card">
       <div class="cardlabel">Arbeitszeit</div>
       <div class="timerow">
@@ -156,8 +164,27 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
           <option value="60" selected>60 Min.</option>
         </select>
       </div>
+
+      <!-- Überstunden genommen (nur bei Baustelle) -->
+      <div class="ue-toggle" id="ueToggle">
+        <div>
+          <div class="ue-toggle-label">Überstunden genommen?</div>
+          <div class="ue-toggle-sub">Früher Schluss, Rest vom Überstundenkonto</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="ueCheck" onchange="toggleUe()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="ue-input" id="ueInput">
+        <div class="ue-row">
+          <input class="ue-number" type="number" id="ueStunden" min="0.5" max="8" step="0.5" value="2" oninput="calcDur()">
+          <span class="ue-suffix">Überstunden genommen</span>
+        </div>
+        <div class="ue-result" id="ueResult"></div>
+      </div>
     </div>
- 
+
     <div class="card">
       <div class="cardlabel">Art des Tages</div>
       <div class="grid2">
@@ -165,31 +192,20 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
         <button class="typebtn" data-type="KUG" onclick="setType(this)">📉 KUG</button>
         <button class="typebtn" data-type="Urlaub" onclick="setType(this)">🌴 Urlaub</button>
         <button class="typebtn" data-type="Krank" onclick="setType(this)">🤒 Krank</button>
-        <button class="typebtn" data-type="Überstunden" onclick="setType(this)">⏱️ Überstunden</button>
+        <button class="typebtn" data-type="Feiertag" onclick="setType(this)">🎌 Feiertag</button>
         <button class="typebtn" data-type="Sonstiges" onclick="setType(this)">📋 Sonstiges</button>
- 
-      <!-- Überstunden Eingabe -->
-      <div class="ueberstunden-input" id="ueberstundenInput">
-        <div class="ue-label">Wie viele Überstunden nimmst du heute?</div>
-        <div class="ue-row">
-          <input class="ue-number" type="number" id="ueStunden" min="0.5" max="8" step="0.5" value="1" oninput="calcUeberstunden()">
-          <span class="ue-suffix">Stunden</span>
-        </div>
-        <div class="ue-result" id="ueResult"></div>
-        <div class="ue-hint">Rest des Tages wird als Arbeitszeit berechnet (8h - Überstunden)</div>
-      </div>
       </div>
     </div>
- 
+
     <div class="card">
       <div class="cardlabel">Bemerkung</div>
       <textarea class="textarea" id="remark" placeholder="z.B. Baustelle Spandau, Gerüstbau 2. OG"></textarea>
     </div>
- 
+
     <button class="submitbtn" id="submitBtn" onclick="doSubmit()">Eintrag übertragen →</button>
-    <div class="hint">Daten werden in Google Sheets gespeichert</div>
+    <div class="hint">Daten werden gespeichert</div>
   </div>
- 
+
   <!-- Korrektur Dialog -->
   <div class="overlay" id="korrekturOverlay">
     <div class="dialog">
@@ -201,7 +217,7 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
       </div>
     </div>
   </div>
- 
+
   <div class="success" id="successScreen">
     <div class="successicon">✓</div>
     <div class="successtitle">Eingetragen!</div>
@@ -210,30 +226,30 @@ body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text)
     <button class="againbtn" onclick="resetForm()">Weiteren Eintrag</button>
   </div>
 </div>
- 
+
 <script>
 var emp = { name: '', pnr: '', company: '', url: '' };
 var selType = 'Baustelle';
 var dateMode = 'heute';
 var selDate = new Date();
-var savedStartTime = '';  // Startzeit für Überstunden
- 
+var savedStartTime = '';
+
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
- 
+
 function showToast(msg, cls) {
   var t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (cls ? ' ' + cls : '');
   setTimeout(function() { t.className = 'toast'; }, 3000);
 }
- 
+
 function init() {
   var p = new URLSearchParams(window.location.search);
   emp.name    = p.get('name')    || localStorage.getItem('zt_name')    || '';
   emp.pnr     = p.get('pnr')     || localStorage.getItem('zt_pnr')     || '';
   emp.company = p.get('company') || localStorage.getItem('zt_company') || '';
   emp.url     = p.get('url')     || localStorage.getItem('zt_url')     || '';
- 
+
   if (!emp.name || !emp.url) {
     document.getElementById('sName').value    = emp.name;
     document.getElementById('sPnr').value     = emp.pnr;
@@ -245,7 +261,7 @@ function init() {
     startApp();
   }
 }
- 
+
 function saveSetup() {
   var name    = document.getElementById('sName').value.trim();
   var pnr     = document.getElementById('sPnr').value.trim();
@@ -261,45 +277,40 @@ function saveSetup() {
   document.getElementById('setupScreen').style.display = 'none';
   startApp();
 }
- 
+
 function startApp() {
   document.getElementById('appWrapper').style.display = 'block';
   document.getElementById('empName').textContent    = emp.name;
   document.getElementById('empMeta').textContent    = emp.pnr ? 'Nr. ' + emp.pnr : 'Mitarbeiter';
   document.getElementById('companyLabel').textContent = emp.company || 'Zeiterfassung';
- 
+
   var now = new Date();
   document.getElementById('dateChip').textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
- 
-  // Keine Zeiten vorausfüllen - Mitarbeiter trägt selbst ein
+
   document.getElementById('tStart').value = '';
   document.getElementById('tEnd').value   = '';
   calcDur();
 }
- 
-// Gemeldete Tage im localStorage speichern
+
 function getDayKey(dateStr) {
   return 'zt_day_' + emp.pnr + '_' + dateStr.replace(/\./g, '_');
 }
- 
 function isDayReported(dateStr) {
   return localStorage.getItem(getDayKey(dateStr)) === 'JA';
 }
- 
 function markDayReported(dateStr) {
   localStorage.setItem(getDayKey(dateStr), 'JA');
 }
- 
+
 function getLastWorkday() {
   var d = new Date();
   d.setDate(d.getDate() - 1);
-  // Wenn Sonntag → Freitag, wenn Samstag → Freitag
   while (d.getDay() === 0 || d.getDay() === 6) {
     d.setDate(d.getDate() - 1);
   }
   return d;
 }
- 
+
 function setDateMode(btn, mode) {
   document.getElementById('btnHeute').className   = 'typebtn' + (mode === 'heute'   ? ' active' : '');
   document.getElementById('btnGestern').className = 'typebtn' + (mode === 'letzter' ? ' active' : '');
@@ -311,156 +322,171 @@ function setDateMode(btn, mode) {
   } else {
     document.getElementById('dateInfo').textContent = '';
   }
-  // Prüfen ob Tag bereits gemeldet
   var dateStr = selDate.toLocaleDateString('de-DE');
   if (isDayReported(dateStr)) {
     document.getElementById('dateInfo').innerHTML = '<span style="color:#E8540A;font-weight:bold;">⚠️ Bereits gemeldet am ' + dateStr + '</span>';
   }
 }
- 
+
+// Überstunden-Toggle
+function toggleUe() {
+  var on = document.getElementById('ueCheck').checked;
+  document.getElementById('ueInput').className = on ? 'ue-input show' : 'ue-input';
+  calcDur();
+}
+
+function ueActive() {
+  return selType === 'Baustelle' && document.getElementById('ueCheck').checked;
+}
+
 function calcDur() {
   var s = document.getElementById('tStart').value;
   var e = document.getElementById('tEnd').value;
   var pause = parseInt(document.getElementById('pauseSel').value) || 0;
   var lbl = document.getElementById('durLabel');
-  if (!s || !e) { lbl.textContent = '–'; return; }
+
+  if (!s || !e) { lbl.textContent = '–'; }
+  else {
+    var sh = parseInt(s.split(':')[0]), sm = parseInt(s.split(':')[1]);
+    var eh = parseInt(e.split(':')[0]), em = parseInt(e.split(':')[1]);
+    var mins = (eh * 60 + em) - (sh * 60 + sm) - pause;
+    if (mins <= 0) { lbl.innerHTML = 'Ungültige Zeit'; }
+    else {
+      var h = Math.floor(mins / 60), m = mins % 60;
+      lbl.innerHTML = 'Arbeitszeit: <b>' + h + 'h' + (m > 0 ? ' ' + m + 'min' : '') + '</b>' + (pause > 0 ? ' (inkl. ' + pause + ' Min. Pause)' : '');
+    }
+  }
+  // Überstunden-Ergebnis berechnen
+  if (ueActive()) {
+    var gearbeitet = workedHours();
+    var genommen = parseFloat(document.getElementById('ueStunden').value) || 0;
+    var soll = gearbeitet + genommen;
+    var res = document.getElementById('ueResult');
+    res.innerHTML = 'Gearbeitet: <b>' + gearbeitet.toFixed(1).replace('.', ',') + 'h</b> + Überstunden genommen: <b>' +
+      genommen.toFixed(1).replace('.', ',') + 'h</b><br>Bezahlter Tag: <b>' + soll.toFixed(1).replace('.', ',') + 'h</b>' +
+      (soll > 8.01 ? ' ⚠️ über 8h — bitte prüfen' : (soll < 7.99 ? ' ⚠️ unter 8h — bitte prüfen' : ' ✓'));
+  }
+}
+
+function workedHours() {
+  var s = document.getElementById('tStart').value;
+  var e = document.getElementById('tEnd').value;
+  var pause = parseInt(document.getElementById('pauseSel').value) || 0;
+  if (!s || !e) return 0;
   var sh = parseInt(s.split(':')[0]), sm = parseInt(s.split(':')[1]);
   var eh = parseInt(e.split(':')[0]), em = parseInt(e.split(':')[1]);
   var mins = (eh * 60 + em) - (sh * 60 + sm) - pause;
-  if (mins <= 0) { lbl.innerHTML = 'Ungültige Zeit'; return; }
-  var h = Math.floor(mins / 60), m = mins % 60;
-  lbl.innerHTML = 'Arbeitszeit: <b>' + h + 'h' + (m > 0 ? ' ' + m + 'min' : '') + '</b>' + (pause > 0 ? ' (inkl. ' + pause + ' Min. Pause)' : '');
+  return mins > 0 ? mins / 60 : 0;
 }
- 
+
 function setType(btn) {
   var btns = document.querySelectorAll('[data-type]');
   for (var i = 0; i < btns.length; i++) btns[i].className = 'typebtn';
   btn.className = 'typebtn active';
   selType = btn.getAttribute('data-type');
- 
-  var absent         = selType === 'Urlaub' || selType === 'Krank';
-  var isKUG          = selType === 'KUG';
-  var isUeberstunden = selType === 'Überstunden';
- 
-  // Überstunden-Eingabe ein/ausblenden
-  var ueInput = document.getElementById('ueberstundenInput');
-  ueInput.className = isUeberstunden ? 'ueberstunden-input show' : 'ueberstunden-input';
- 
+
+  var absent = selType === 'Urlaub' || selType === 'Krank' || selType === 'Feiertag';
+  var isKUG  = selType === 'KUG';
+
+  // Überstunden-Toggle nur bei Baustelle sichtbar
+  var ueToggle = document.getElementById('ueToggle');
+  ueToggle.style.display = (selType === 'Baustelle') ? 'flex' : 'none';
+  if (selType !== 'Baustelle') {
+    document.getElementById('ueCheck').checked = false;
+    document.getElementById('ueInput').className = 'ue-input';
+  }
+
   document.getElementById('tStart').disabled   = absent;
-  document.getElementById('tEnd').disabled     = absent || isUeberstunden;
-  document.getElementById('pauseSel').disabled = absent || isKUG || isUeberstunden;
- 
+  document.getElementById('tEnd').disabled     = absent;
+  document.getElementById('pauseSel').disabled = absent || isKUG;
+
   if (isKUG) {
     document.getElementById('tStart').value = '08:00';
     document.getElementById('tEnd').value   = '16:00';
     document.getElementById('pauseSel').value = '0';
     calcDur();
-  } else if (isUeberstunden) {
-    document.getElementById('tEnd').value   = '';
-    document.getElementById('durLabel').textContent = '–';
-    calcUeberstunden();
   } else if (absent) {
-    document.getElementById('durLabel').textContent = selType + ' – kein Arbeitstag';
+    document.getElementById('durLabel').textContent = selType + ' – 8h, kein Arbeitstag';
   } else {
     calcDur();
   }
 }
- 
-function calcUeberstunden() {
-  var input = document.getElementById('ueStunden');
-  var ue = parseFloat(input.value) || 0;
-  if (ue < 0) { ue = 0; input.value = 0; }
-  if (ue > 8) { ue = 8; input.value = 8; }
-  var rest = Math.max(0, 8 - ue);
-  var result = document.getElementById('ueResult');
-  var ganzerTag = ue >= 8;
- 
-  if (ganzerTag) {
-    result.innerHTML = 'Ganzer Tag Überstunden — <b>0h Arbeitszeit</b>';
-  } else {
-    result.innerHTML = 'Überstunden: <b>' + ue + 'h</b> — Verbleibende Arbeitszeit: <b>' + rest.toFixed(1) + 'h</b>';
-  }
-}
- 
+
 var pendingPayload = null;
- 
+
 function doSubmit() {
   var start  = document.getElementById('tStart').value;
   var end    = document.getElementById('tEnd').value;
-  var pause  = document.getElementById('pauseSel').value;
-  var remark = document.getElementById('remark').value.trim();
-  var absent = selType === 'Urlaub' || selType === 'Krank';
- 
-  var isUeberstunden = selType === 'Überstunden';
-  if (!absent && !isUeberstunden && (!start || !end)) { showToast('Bitte Zeiten eingeben', 'err'); return; }
-  if (isUeberstunden) {
-    var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
-    if (ueH <= 0) { showToast('Bitte Überstunden eingeben', 'err'); return; }
+  var absent = selType === 'Urlaub' || selType === 'Krank' || selType === 'Feiertag';
+
+  if (!absent && (!start || !end)) { showToast('Bitte Zeiten eingeben', 'err'); return; }
+
+  if (ueActive()) {
+    var genommen = parseFloat(document.getElementById('ueStunden').value) || 0;
+    if (genommen <= 0) { showToast('Bitte Überstunden eingeben', 'err'); return; }
+    var soll = workedHours() + genommen;
+    if (soll < 7.99 || soll > 8.01) {
+      if (!confirm('Gearbeitet + Überstunden = ' + soll.toFixed(1).replace('.', ',') + 'h (nicht 8h). Trotzdem senden?')) return;
+    }
   }
- 
+
   var dateStr = selDate.toLocaleDateString('de-DE');
- 
-  // Prüfen ob Tag bereits gemeldet
   if (isDayReported(dateStr)) {
     document.getElementById('dialogText').innerHTML = 'Du hast den <strong>' + dateStr + '</strong> bereits gemeldet.<br><br>Möchtest du ihn erneut als <strong>Korrektur</strong> senden?';
     document.getElementById('korrekturOverlay').classList.add('show');
     return;
   }
- 
   sendEntry(false);
 }
- 
+
 function closeDialog() {
   document.getElementById('korrekturOverlay').classList.remove('show');
 }
- 
 function confirmKorrektur() {
   closeDialog();
   sendEntry(true);
 }
- 
+
 function sendEntry(isKorrektur) {
-  // Werte direkt aus DOM lesen - disabled-Attribut ignorieren via getAttribute
-  var startEl = document.getElementById('tStart');
-  var endEl   = document.getElementById('tEnd');
-  var start  = startEl.value || '';
-  var end    = endEl.value   || '';
+  var start  = document.getElementById('tStart').value || '';
+  var end    = document.getElementById('tEnd').value   || '';
   var pause  = document.getElementById('pauseSel').value;
   var remark = document.getElementById('remark').value.trim();
-  var absent         = selType === 'Urlaub' || selType === 'Krank';
-  var isUeberstunden = selType === 'Überstunden';
- 
+  var absent = selType === 'Urlaub' || selType === 'Krank' || selType === 'Feiertag';
+
   var btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.textContent = 'Wird übertragen…';
- 
+
   var now = new Date();
   var dateStr  = selDate.toLocaleDateString('de-DE');
   var weekday  = selDate.toLocaleDateString('de-DE', { weekday: 'long' });
   var timestamp = now.toLocaleString('de-DE');
- 
+
   var netHours = '';
+  var ueGenommen = 0;
   var payloadStart = start;
   var payloadEnd = end;
   var payloadPause = absent ? '' : pause + ' Min.';
   var payloadRemark = remark;
- 
-  if (isUeberstunden) {
-    var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
-    var restH = Math.max(0, 8 - ueH);
-    netHours = restH.toFixed(2);
-    var ueStartVal = document.getElementById('tStart').value || savedStartTime;
-    payloadStart = (ueH < 8 && ueStartVal) ? ueStartVal : '';
+
+  if (absent) {
+    netHours = '8.00';
+    payloadStart = '';
     payloadEnd = '';
     payloadPause = '';
-    payloadRemark = ueH + 'h Überstunden genommen' + (remark ? ' — ' + remark : '');
-  } else if (!absent && start && end) {
+  } else if (start && end) {
     var sh = parseInt(start.split(':')[0]), sm = parseInt(start.split(':')[1]);
     var eh = parseInt(end.split(':')[0]),   em = parseInt(end.split(':')[1]);
     var mins = (eh * 60 + em) - (sh * 60 + sm) - parseInt(pause);
     if (mins > 0) netHours = (mins / 60).toFixed(2);
+    // Überstunden genommen
+    if (ueActive()) {
+      ueGenommen = parseFloat(document.getElementById('ueStunden').value) || 0;
+      payloadRemark = ueGenommen.toFixed(1).replace('.', ',') + 'h Überstunden genommen' + (remark ? ' — ' + remark : '');
+    }
   }
- 
+
   var payload = {
     name:      emp.name,
     pnr:       emp.pnr,
@@ -471,20 +497,20 @@ function sendEntry(isKorrektur) {
     end:       payloadEnd,
     pause:     payloadPause,
     netHours:  netHours,
+    ueberstundenGenommen: ueGenommen ? ueGenommen.toFixed(2) : '0',
     type:      selType,
     remark:    payloadRemark,
     timestamp: timestamp,
     korrektur: isKorrektur ? 'KORREKTUR' : ''
   };
- 
+
   var qs = '';
   var keys = Object.keys(payload);
   for (var i = 0; i < keys.length; i++) {
     if (qs) qs += '&';
     qs += encodeURIComponent(keys[i]) + '=' + encodeURIComponent(payload[keys[i]]);
   }
- 
-  // Edge Function Proxy verwenden (zuverlässig auf allen Geräten)
+
   var xhr = new XMLHttpRequest();
   xhr.open('GET', '/submit?' + qs, true);
   xhr.onload = function() { showSuccessScreen(payload); };
@@ -493,30 +519,33 @@ function sendEntry(isKorrektur) {
   xhr.ontimeout = function() { showSuccessScreen(payload); };
   xhr.send();
 }
- 
+
 function showSuccessScreen(payload) {
-  // Tag als gemeldet markieren
   markDayReported(payload.date);
- 
   document.getElementById('mainForm').style.display = 'none';
   document.getElementById('successScreen').style.display = 'flex';
   document.getElementById('successScreen').style.flexDirection = 'column';
   var subText = payload.name + ' · ' + payload.date + '<br>';
   subText += payload.korrektur === 'KORREKTUR' ? '<span style="color:#E8540A;font-weight:bold;">Korrektur gespeichert</span>' : 'Eintrag gespeichert.';
   document.getElementById('successSub').innerHTML = subText;
- 
-  var absent = payload.type === 'Urlaub' || payload.type === 'Krank';
+
+  var absent = payload.type === 'Urlaub' || payload.type === 'Krank' || payload.type === 'Feiertag';
   var html = '<div class="srow"><span class="sk">Art</span><span class="sv">' + payload.type + '</span></div>';
   if (!absent) {
     html += '<div class="srow"><span class="sk">Beginn</span><span class="sv">' + payload.start + ' Uhr</span></div>';
     html += '<div class="srow"><span class="sk">Ende</span><span class="sv">' + payload.end + ' Uhr</span></div>';
     html += '<div class="srow"><span class="sk">Pause</span><span class="sv">' + payload.pause + '</span></div>';
-    html += '<div class="srow"><span class="sk">Netto</span><span class="sv">' + payload.netHours + ' h</span></div>';
+    html += '<div class="srow"><span class="sk">Gearbeitet</span><span class="sv">' + payload.netHours + ' h</span></div>';
+    if (parseFloat(payload.ueberstundenGenommen) > 0) {
+      html += '<div class="srow"><span class="sk">Überstd. genommen</span><span class="sv">' + parseFloat(payload.ueberstundenGenommen).toFixed(1).replace('.', ',') + ' h</span></div>';
+    }
+  } else {
+    html += '<div class="srow"><span class="sk">Stunden</span><span class="sv">8,00 h</span></div>';
   }
   if (payload.remark) html += '<div class="srow"><span class="sk">Bemerkung</span><span class="sv">' + payload.remark + '</span></div>';
   document.getElementById('successDetail').innerHTML = html;
 }
- 
+
 function resetForm() {
   document.getElementById('mainForm').style.display = 'flex';
   document.getElementById('mainForm').style.flexDirection = 'column';
@@ -526,20 +555,22 @@ function resetForm() {
   document.getElementById('remark').value = '';
   document.getElementById('tStart').value = '';
   document.getElementById('tEnd').value = '';
-  document.getElementById('ueStunden').value = '1';
+  document.getElementById('ueStunden').value = '2';
+  document.getElementById('ueCheck').checked = false;
+  document.getElementById('ueInput').className = 'ue-input';
   savedStartTime = '';
-  document.getElementById('ueberstundenInput').className = 'ueberstunden-input';
   setDateMode(document.getElementById('btnHeute'), 'heute');
   var btns = document.querySelectorAll('[data-type]');
   for (var i = 0; i < btns.length; i++) btns[i].className = 'typebtn';
   btns[0].className = 'typebtn active';
   selType = 'Baustelle';
+  document.getElementById('ueToggle').style.display = 'flex';
   document.getElementById('tStart').disabled = false;
   document.getElementById('tEnd').disabled = false;
   document.getElementById('pauseSel').disabled = false;
   calcDur();
 }
- 
+
 init();
 </script>
 </body>
