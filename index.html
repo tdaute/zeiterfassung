@@ -449,7 +449,7 @@ function sendEntry(isKorrektur) {
     var ueH = parseFloat(document.getElementById('ueStunden').value) || 0;
     var restH = Math.max(0, 8 - ueH);
     netHours = restH.toFixed(2);
-    var ueStartVal = document.getElementById('tStart').value;
+    var ueStartVal = document.getElementById('tStart').value || savedStartTime;
     payloadStart = (ueH < 8 && ueStartVal) ? ueStartVal : '';
     payloadEnd = '';
     payloadPause = '';
