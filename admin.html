@@ -1,0 +1,948 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichtelmann — Verwaltung</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --orange: #E8540A;
+  --orange-dark: #C9460A;
+  --orange-light: #FFF0EA;
+  --coral: #FF6B5B;
+  --coral-dark: #F0594A;
+  --coral-light: #FFEEEB;
+  --bg: #F5F3EF;
+  --sidebar: #FBFAF8;
+  --sidebar-hover: #F0EDE8;
+  --sidebar-text: #5A554E;
+  --sidebar-border: #E2DDD7;
+  --card: #FFFFFF;
+  --text: #1A1714;
+  --muted: #7A756E;
+  --border: #E2DDD7;
+  --red: #9B1C1C;
+  --red-light: #FEF2F2;
+  --green: #2D6A4F;
+  --green-light: #E8F5EE;
+  --blue: #1E5A8A;
+  --blue-light: #EAF2F9;
+  --sidebar-w: 248px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+ 
+/* ============ LOGIN ============ */
+.login-wrap { max-width: 380px; margin: 60px auto; padding: 0 16px; }
+.login-card { background: var(--card); border-radius: 16px; padding: 28px 24px; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(26,23,20,0.06); }
+.login-logo { width: 44px; height: 44px; border-radius: 12px; background: var(--coral); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: bold; margin-bottom: 16px; }
+.login-title { font-size: 22px; font-weight: bold; margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.field input { width: 100%; font-size: 15px; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px; outline: none; background: var(--bg); }
+.field input:focus { border-color: var(--coral); }
+.btn-primary { background: var(--coral); color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 12px; padding: 14px; width: 100%; cursor: pointer; transition: background .15s; }
+.btn-primary:hover { background: var(--coral-dark); }
+.btn-primary:disabled { background: var(--border); color: var(--muted); }
+.err { background: var(--red-light); color: var(--red); font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; display: none; }
+ 
+/* ============ COCKPIT-LAYOUT ============ */
+.shell { display: none; min-height: 100vh; }
+.shell.on { display: block; }
+ 
+/* Sidebar */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+  background: var(--sidebar); color: var(--sidebar-text);
+  display: flex; flex-direction: column; z-index: 50;
+  border-right: 1px solid var(--sidebar-border);
+  transition: transform .25s ease;
+}
+.sb-brand { padding: 20px 18px 16px; border-bottom: 1px solid var(--sidebar-border); }
+.sb-brand .logo { width: 34px; height: 34px; border-radius: 9px; background: var(--coral); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 17px; margin-bottom: 10px; }
+.sb-brand .bn { font-size: 14px; font-weight: bold; color: var(--text); line-height: 1.3; }
+.sb-brand .bs { font-size: 11px; color: var(--muted); margin-top: 2px; }
+ 
+.sb-nav { flex: 1; overflow-y: auto; padding: 12px 10px; }
+.sb-group { margin-bottom: 18px; }
+.sb-group-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0 10px 8px; font-weight: bold; }
+.sb-item {
+  display: flex; align-items: center; gap: 11px; padding: 10px 11px; border-radius: 9px;
+  font-size: 14px; color: var(--sidebar-text); cursor: pointer; margin-bottom: 2px;
+  transition: background .12s, color .12s; user-select: none;
+}
+.sb-item:hover { background: var(--sidebar-hover); color: var(--text); }
+.sb-item.active { background: var(--coral-light); color: var(--coral-dark); font-weight: bold; }
+.sb-item .ic { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.sb-item .soon { margin-left: auto; font-size: 9px; font-weight: bold; letter-spacing: .04em; background: var(--bg); color: var(--muted); padding: 2px 7px; border-radius: 8px; text-transform: uppercase; border: 1px solid var(--sidebar-border); }
+.sb-item.disabled { opacity: 0.55; cursor: default; }
+.sb-item.disabled:hover { background: transparent; color: var(--sidebar-text); }
+ 
+.sb-foot { padding: 12px 14px; border-top: 1px solid var(--sidebar-border); }
+.sb-user { font-size: 12px; color: var(--muted); margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.logoutbtn { background: var(--bg); color: var(--text); border: 1px solid var(--sidebar-border); border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; transition: background .12s; }
+.logoutbtn:hover { background: var(--sidebar-hover); }
+ 
+/* Content */
+.content { margin-left: var(--sidebar-w); min-height: 100vh; }
+.topbar {
+  position: sticky; top: 0; z-index: 30; background: rgba(245,243,239,0.92); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 14px;
+}
+.hamburger { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 9px; width: 40px; height: 40px; font-size: 18px; cursor: pointer; color: var(--text); }
+.pagetitle { font-size: 18px; font-weight: bold; }
+.pagesub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+ 
+.scrim { display: none; position: fixed; inset: 0; background: rgba(26,23,20,0.4); z-index: 45; }
+.scrim.on { display: block; }
+ 
+.main { padding: 20px 24px 60px; display: flex; flex-direction: column; gap: 14px; max-width: 1000px; }
+.page { display: none; }
+.page.on { display: flex; flex-direction: column; gap: 14px; }
+ 
+.card { background: var(--card); border-radius: 14px; padding: 16px; border: 1px solid var(--border); }
+.cardlabel { font-size: 11px; font-weight: bold; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+ 
+/* MA-Liste */
+.malist { display: flex; flex-direction: column; gap: 8px; }
+.maitem { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; background: var(--card); transition: border-color .12s, background .12s; }
+.maitem:hover { border-color: var(--orange); background: var(--orange-light); }
+.maitem .mn { font-size: 15px; font-weight: bold; }
+.maitem .mm { font-size: 12px; color: var(--muted); }
+.maitem .arrow { color: var(--orange); font-size: 18px; font-weight: bold; }
+.badge-inaktiv { font-size: 10px; font-weight: bold; color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
+ 
+/* Monatsnav */
+.monthnav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.monthbtn { border: 1.5px solid var(--border); background: var(--bg); border-radius: 10px; width: 42px; height: 42px; font-size: 20px; font-weight: bold; color: var(--orange); cursor: pointer; }
+.monthbtn:hover { background: var(--orange-light); }
+.monthlabel { font-size: 17px; font-weight: bold; text-align: center; flex: 1; }
+ 
+.backbtn { background: none; border: none; color: var(--orange); font-size: 14px; font-weight: bold; cursor: pointer; padding: 0; margin-bottom: 4px; }
+ 
+.summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.sumbox { background: var(--bg); border-radius: 10px; padding: 12px; text-align: center; }
+.sumval { font-size: 20px; font-weight: bold; color: var(--orange); }
+.sumlbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+ 
+.tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
+th { background: var(--bg); color: var(--muted); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; padding: 8px 6px; text-align: left; border-bottom: 1.5px solid var(--border); white-space: nowrap; }
+td { padding: 9px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+.daycol { font-weight: bold; }
+.wd { color: var(--muted); font-weight: normal; font-size: 11px; margin-left: 4px; }
+.weekend td { background: #FBFAF8; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.tag-baustelle { background: var(--orange-light); color: var(--orange); }
+.tag-kug { background: var(--blue-light); color: var(--blue); }
+.tag-urlaub { background: var(--green-light); color: var(--green); }
+.tag-krank { background: var(--red-light); color: var(--red); }
+.tag-feiertag { background: #F0EEFB; color: #6B5BCF; }
+.tag-sonstiges { background: var(--bg); color: var(--muted); }
+.korrektur-badge { display: inline-block; font-size: 9px; font-weight: bold; color: var(--red); background: var(--red-light); padding: 1px 5px; border-radius: 8px; margin-left: 6px; }
+.dash { color: var(--border); }
+ 
+.gesamt th, .gesamt td { text-align: left; }
+.gesamt .num { text-align: right; font-variant-numeric: tabular-nums; }
+.gesamt tr.clickable { cursor: pointer; }
+.gesamt tr.clickable:hover td { background: var(--orange-light); }
+ 
+.state { text-align: center; padding: 40px 20px; color: var(--muted); }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hint { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 0 4px; }
+ 
+.pdfbtn { background: var(--green); color: white; border: none; border-radius: 10px; padding: 12px 16px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; }
+.pdfbtn:active { opacity: 0.85; }
+ 
+/* Platzhalter-Seiten (Verwaltung) */
+.placeholder { text-align: center; padding: 50px 24px; }
+.placeholder .pico { font-size: 46px; margin-bottom: 14px; }
+.placeholder h2 { font-size: 20px; margin-bottom: 8px; }
+.placeholder p { font-size: 14px; color: var(--muted); max-width: 460px; margin: 0 auto 6px; line-height: 1.6; }
+.placeholder .soonbadge { display: inline-block; margin-top: 14px; font-size: 11px; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; background: var(--orange-light); color: var(--orange); padding: 6px 14px; border-radius: 20px; }
+ 
+/* Druck-Bereich */
+#printArea { display: none; }
+@media print {
+  body * { visibility: hidden; }
+  #printArea, #printArea * { visibility: visible; }
+  #printArea { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+  @page { size: A4 portrait; margin: 14mm; }
+  .page-break { page-break-after: always; }
+}
+.print-doc { font-family: Arial, sans-serif; color: #000; font-size: 11px; }
+.print-doc h1 { font-size: 15px; margin-bottom: 2px; }
+.print-doc .ph { font-size: 11px; margin-bottom: 1px; }
+.print-doc .pmeta { margin: 10px 0 14px; font-size: 12px; }
+.print-doc table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-bottom: 6px; }
+.print-doc th, .print-doc td { border: 1px solid #999; padding: 3px 5px; text-align: left; }
+.print-doc th { background: #eee; font-size: 9px; text-transform: uppercase; }
+.print-doc .we { background: #f5f5f5; }
+.print-doc .sumrow td { font-weight: bold; background: #eee; }
+.print-doc .num { text-align: right; }
+ 
+.editrow { border: 1.5px solid var(--border); background: var(--card); color: var(--orange); border-radius: 8px; width: 30px; height: 30px; font-size: 14px; cursor: pointer; line-height: 1; }
+.editrow:hover { background: var(--orange-light); border-color: var(--orange); }
+ 
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,23,20,0.55); z-index: 100; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--card); border-radius: 16px; width: 100%; max-width: 440px; padding: 22px; border: 1px solid var(--border); }
+.modal-box h3 { font-size: 18px; margin-bottom: 2px; }
+.modal-box .msub { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+.kf { margin-bottom: 14px; }
+.kf label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.kf input, .kf select { width: 100%; font-size: 15px; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px; outline: none; background: var(--bg); }
+.kf input:focus, .kf select:focus { border-color: var(--orange); }
+.kf-row { display: flex; gap: 10px; }
+.kf-row .kf { flex: 1; }
+.kf-dauer { background: var(--orange-light); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: var(--orange); font-weight: bold; text-align: center; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+.modal-actions button { flex: 1; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: bold; cursor: pointer; border: none; }
+.btn-cancel { background: var(--bg); color: var(--muted); border: 1.5px solid var(--border) !important; }
+.btn-save { background: var(--orange); color: white; }
+.btn-save:disabled { background: var(--border); color: var(--muted); }
+ 
+@media (max-width: 860px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .content { margin-left: 0; }
+  .hamburger { display: block; }
+  .main { padding: 16px; }
+}
+</style>
+</head>
+<body>
+ 
+<!-- ============ LOGIN ============ -->
+<div id="loginView" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">F</div>
+    <div class="login-title">Verwaltung</div>
+    <div class="login-sub">Garten- und Landschaftsbau Fichtelmann GmbH</div>
+    <div class="err" id="loginErr"></div>
+    <div class="field">
+      <label>E-Mail</label>
+      <input type="email" id="email" autocomplete="username" placeholder="name@firma.de">
+    </div>
+    <div class="field">
+      <label>Passwort</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Anmelden</button>
+  </div>
+</div>
+ 
+<!-- ============ COCKPIT (nach Login) ============ -->
+<div class="shell" id="shell">
+ 
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="logo">F</div>
+      <div class="bn">Fichtelmann GmbH</div>
+      <div class="bs">Verwaltungs-Cockpit</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-group">
+        <div class="sb-group-label">Zeiterfassung</div>
+        <div class="sb-item active" data-page="list"      onclick="nav('list')"><span class="ic">👷</span> Mitarbeiter</div>
+        <div class="sb-item"        data-page="gesamt"    onclick="nav('gesamt')"><span class="ic">📊</span> Monatsübersicht</div>
+        <div class="sb-item"        data-page="abschluss" onclick="nav('abschluss')"><span class="ic">🔒</span> Monatsabschluss</div>
+        <div class="sb-item"        data-page="jahr"      onclick="nav('jahr')"><span class="ic">📅</span> Jahresnachweis <span class="soon">bald</span></div>
+      </div>
+      <div class="sb-group">
+        <div class="sb-group-label">Verwaltung</div>
+        <div class="sb-item"        data-page="planer"    onclick="nav('planer')"><span class="ic">🗓️</span> Personalplaner <span class="soon">bald</span></div>
+        <div class="sb-item disabled"><span class="ic">📁</span> Dokumente <span class="soon">bald</span></div>
+        <div class="sb-item disabled"><span class="ic">⚙️</span> Einstellungen <span class="soon">bald</span></div>
+      </div>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-user" id="sbUser">—</div>
+      <button class="logoutbtn" onclick="doLogout()">Abmelden</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" onclick="closeSidebar()"></div>
+ 
+  <!-- Content -->
+  <div class="content">
+    <div class="topbar">
+      <button class="hamburger" onclick="openSidebar()">☰</button>
+      <div>
+        <div class="pagetitle" id="pageTitle">Mitarbeiter</div>
+        <div class="pagesub" id="pageSub">Alle Mitarbeiter & Stundennachweise</div>
+      </div>
+    </div>
+ 
+    <div class="main">
+ 
+      <!-- PAGE: MA-LISTE -->
+      <div class="page on" id="page-list">
+        <div class="card">
+          <div class="cardlabel">Alle Mitarbeiter</div>
+          <div class="malist" id="maList">
+            <div class="state"><div class="spinner"></div>Lade Mitarbeiter…</div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- PAGE: EINZEL-DETAIL -->
+      <div class="page" id="page-detail">
+        <div class="card">
+          <button class="backbtn" onclick="nav('list')">‹ Zurück zur Liste</button>
+          <div id="detailName" style="color:var(--text);font-size:20px;font-weight:bold;"></div>
+          <div id="detailMeta" style="font-size:12px;color:var(--muted);"></div>
+        </div>
+        <div class="card">
+          <div class="monthnav">
+            <button class="monthbtn" onclick="changeMonth(-1)">‹</button>
+            <div class="monthlabel" id="detailMonth"></div>
+            <button class="monthbtn" onclick="changeMonth(1)">›</button>
+          </div>
+          <button class="pdfbtn" style="margin-top:12px;" onclick="pdfEinzel()">📄 Stundennachweis als PDF</button>
+        </div>
+        <div class="card">
+          <div class="summary">
+            <div class="sumbox"><div class="sumval" id="dSumHours">0,0</div><div class="sumlbl">Stunden</div></div>
+            <div class="sumbox"><div class="sumval" id="dSumDays">0</div><div class="sumlbl">Arbeitstage</div></div>
+            <div class="sumbox"><div class="sumval" id="dSumAbsent">0</div><div class="sumlbl">Urlaub/Krank</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="cardlabel">Stundennachweis</div>
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Tag</th><th>Beginn</th><th>Pause</th><th>Ende</th><th>Dauer</th><th>Art</th><th>ÜStd. gen.</th><th>Bemerkung</th><th></th></tr></thead>
+              <tbody id="detailBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- PAGE: GESAMTÜBERSICHT -->
+      <div class="page" id="page-gesamt">
+        <div class="card">
+          <div class="monthnav">
+            <button class="monthbtn" onclick="changeGesamtMonth(-1)">‹</button>
+            <div class="monthlabel" id="gesamtMonth"></div>
+            <button class="monthbtn" onclick="changeGesamtMonth(1)">›</button>
+          </div>
+          <button class="pdfbtn" style="margin-top:12px;" onclick="pdfSammel()">📄 Alle Stundennachweise als Sammel-PDF</button>
+        </div>
+        <div class="card">
+          <div class="cardlabel">Alle Mitarbeiter — Monatssummen</div>
+          <div class="tablewrap">
+            <table class="gesamt">
+              <thead><tr><th>Mitarbeiter</th><th>Pers.-Nr.</th><th class="num">Stunden</th><th class="num">Arbeitstage</th><th class="num">Urlaub/Krank</th></tr></thead>
+              <tbody id="gesamtBody"></tbody>
+            </table>
+          </div>
+          <div class="hint" id="gesamtHint"></div>
+        </div>
+      </div>
+ 
+      <!-- PAGE: MONATSABSCHLUSS -->
+      <div class="page" id="page-abschluss">
+        <div class="card">
+          <div class="monthnav">
+            <button class="monthbtn" onclick="changeAbschlussMonth(-1)">‹</button>
+            <div class="monthlabel" id="abschlussMonth"></div>
+            <button class="monthbtn" onclick="changeAbschlussMonth(1)">›</button>
+          </div>
+          <div id="abschlussStatus" style="margin-top:12px; text-align:center; font-size:14px;"></div>
+        </div>
+        <div class="card">
+          <div class="cardlabel">Ablauf</div>
+          <div style="font-size:13px; color:var(--muted); line-height:1.6;">
+            <b>1. Vorläufig abschließen</b> (ca. 26.–28.): fehlende Arbeitstage bis Monatsende werden mit 8 Std. fortgeschrieben (außer Wochenende, Feiertag, bereits erfasst, Urlaub/Krank). Fürs Steuerbüro.<br>
+            <b>2. Endgültig abschließen</b> (im Folgemonat): vorläufige Tage prüfen/korrigieren, dann festschreiben.
+          </div>
+        </div>
+        <div class="card">
+          <div class="cardlabel">Vorläufige (fortgeschriebene) Tage</div>
+          <div class="tablewrap">
+            <table class="gesamt">
+              <thead><tr><th>Mitarbeiter</th><th>Tag</th><th class="num">Std</th><th>Status</th></tr></thead>
+              <tbody id="vorlaeufigBody"></tbody>
+            </table>
+          </div>
+          <div class="hint" id="vorlaeufigHint"></div>
+        </div>
+        <div class="card">
+          <button class="pdfbtn" id="btnVorlaeufig" style="background:var(--blue);" onclick="vorlaeufigAbschluss()">① Vorläufig abschließen + Export (Steuerbüro)</button>
+          <button class="pdfbtn" style="margin-top:10px;" onclick="exportGesamtCSV('aktuell')">⬇︎ Gesamt-CSV jetzt herunterladen</button>
+          <button class="pdfbtn" id="btnFinal" style="margin-top:10px; background:var(--orange);" onclick="finalAbschluss()">② Endgültig abschließen</button>
+        </div>
+      </div>
+ 
+      <!-- PAGE: JAHRESNACHWEIS (Platzhalter) -->
+      <div class="page" id="page-jahr">
+        <div class="card placeholder">
+          <div class="pico">📅</div>
+          <h2>Jahresnachweis</h2>
+          <p>Die Jahresübersicht pro Mitarbeiter — Monatssummen, Überstunden, Zuschläge, Urlaub & Krank auf einen Blick. Export als PDF und CSV fürs Steuerbüro.</p>
+          <p>Wird aus den abgeschlossenen Monaten automatisch befüllt.</p>
+          <div class="soonbadge">In Vorbereitung</div>
+        </div>
+      </div>
+ 
+      <!-- PAGE: PERSONALPLANER (Platzhalter) -->
+      <div class="page" id="page-planer">
+        <div class="card placeholder">
+          <div class="pico">🗓️</div>
+          <h2>Personalplaner</h2>
+          <p>Jahresplanung des Teams — Urlaub, Abwesenheiten und Einsätze über alle Mitarbeiter, direkt verzahnt mit der Zeiterfassung.</p>
+          <div class="soonbadge">In Vorbereitung</div>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+</div>
+ 
+<!-- Korrektur-Modal -->
+<div class="modal-overlay" id="korrModal">
+  <div class="modal-box">
+    <h3>Eintrag korrigieren</h3>
+    <div class="msub" id="korrSub">–</div>
+    <div class="kf-row">
+      <div class="kf"><label>Beginn</label><input type="time" id="kBeginn" onchange="berechneDauer()"></div>
+      <div class="kf"><label>Ende</label><input type="time" id="kEnde" onchange="berechneDauer()"></div>
+    </div>
+    <div class="kf">
+      <label>Pause</label>
+      <select id="kPause" onchange="berechneDauer()">
+        <option value="0 Min.">keine</option>
+        <option value="30 Min.">30 Min.</option>
+        <option value="60 Min.">60 Min.</option>
+      </select>
+    </div>
+    <div class="kf-dauer" id="kDauer">Dauer: –</div>
+    <div class="kf">
+      <label>Art</label>
+      <select id="kArt" onchange="berechneDauer()">
+        <option value="Baustelle">Baustelle</option>
+        <option value="KUG">KUG</option>
+        <option value="Urlaub">Urlaub</option>
+        <option value="Krank">Krank</option>
+        <option value="Feiertag">Feiertag</option>
+        <option value="Sonstiges">Sonstiges</option>
+      </select>
+    </div>
+    <div class="kf" id="kUeberstdRow">
+      <label>Überstunden genommen (Std.)</label>
+      <input type="number" id="kUeberstd" min="0" step="0.5" placeholder="0" value="0">
+    </div>
+    <div class="kf"><label>Bemerkung</label><input type="text" id="kRemark" placeholder="optional"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeKorrektur()">Abbrechen</button>
+      <button class="btn-save" id="kSaveBtn" onclick="saveKorrektur()">Speichern</button>
+    </div>
+  </div>
+</div>
+ 
+<div id="printArea"></div>
+ 
+<script>
+// ============ KONFIG ============
+const SUPABASE_URL  = 'https://yjbphyeupnjwzjjkhsih.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_5ai62448Jal0CaSfXH7gJw_H7Bb4sut';
+ 
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const WD = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+ 
+let sb;
+let mitarbeiter = [];
+let currentMA = null;
+let viewYear, viewMonth;
+let detailByDay = {};
+let gYear, gMonth;
+let aYear, aMonth;
+ 
+function parseHours(v){ const n=parseFloat(v); return isNaN(n)?0:n; }
+ 
+// ---- AUTH ----
+async function doLogin() {
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Anmelden…';
+  const email = document.getElementById('email').value.trim();
+  const pw    = document.getElementById('password').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) {
+    err.textContent = 'Anmeldung fehlgeschlagen. E-Mail oder Passwort falsch.';
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Anmelden';
+    return;
+  }
+  showApp();
+}
+async function doLogout() { await sb.auth.signOut(); location.reload(); }
+ 
+async function showApp() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('shell').classList.add('on');
+  const { data } = await sb.auth.getUser();
+  document.getElementById('sbUser').textContent = data?.user?.email || '';
+  const n = new Date();
+  viewYear = gYear = n.getFullYear();
+  viewMonth = gMonth = n.getMonth() + 1;
+  await loadMitarbeiter();
+}
+ 
+// ---- SIDEBAR (mobil) ----
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.add('on'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('scrim').classList.remove('on'); }
+ 
+// ---- NAVIGATION ----
+const PAGE_META = {
+  list:      ['Mitarbeiter', 'Alle Mitarbeiter & Stundennachweise'],
+  detail:    ['Stundennachweis', 'Einzelansicht'],
+  gesamt:    ['Monatsübersicht', 'Summen aller Mitarbeiter'],
+  abschluss: ['Monatsabschluss', 'Vorläufig & endgültig abschließen'],
+  jahr:      ['Jahresnachweis', 'Jahresübersicht pro Mitarbeiter'],
+  planer:    ['Personalplaner', 'Jahresplanung des Teams']
+};
+function nav(page) {
+  // Sidebar-Highlight
+  document.querySelectorAll('.sb-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page && page !== 'detail');
+  });
+  if (page === 'detail') {
+    document.querySelector('.sb-item[data-page="list"]').classList.add('active');
+  }
+  // Seiten umschalten
+  ['list','detail','gesamt','abschluss','jahr','planer'].forEach(p => {
+    document.getElementById('page-'+p).classList.toggle('on', p === page);
+  });
+  const meta = PAGE_META[page] || ['',''];
+  document.getElementById('pageTitle').textContent = meta[0];
+  document.getElementById('pageSub').textContent = meta[1];
+  closeSidebar();
+  if (page === 'gesamt') renderGesamt();
+  if (page === 'abschluss') renderAbschluss();
+}
+ 
+// ---- DATEN ----
+async function loadMitarbeiter() {
+  const { data, error } = await sb.from('mitarbeiter').select('pnr, name, aktiv').order('pnr');
+  const box = document.getElementById('maList');
+  if (error) { box.innerHTML = '<div class="state">Fehler beim Laden.</div>'; return; }
+  mitarbeiter = data || [];
+  box.innerHTML = '';
+  mitarbeiter.forEach(ma => {
+    const div = document.createElement('div');
+    div.className = 'maitem';
+    div.onclick = () => openMA(ma);
+    div.innerHTML =
+      '<div><div class="mn">' + ma.name + '</div><div class="mm">Pers.-Nr. ' + ma.pnr + '</div></div>' +
+      '<div>' + (ma.aktiv ? '' : '<span class="badge-inaktiv">inaktiv</span> ') +
+      '<span class="arrow">›</span></div>';
+    box.appendChild(div);
+  });
+}
+ 
+// ---- DETAIL ----
+async function openMA(ma) {
+  currentMA = ma;
+  document.getElementById('detailName').textContent = ma.name;
+  document.getElementById('detailMeta').textContent = 'Pers.-Nr. ' + ma.pnr;
+  nav('detail');
+  await renderDetail();
+}
+function changeMonth(d) {
+  viewMonth += d;
+  if (viewMonth < 1){ viewMonth = 12; viewYear--; }
+  if (viewMonth > 12){ viewMonth = 1; viewYear++; }
+  renderDetail();
+}
+async function renderDetail() {
+  document.getElementById('detailMonth').textContent = MONTHS[viewMonth-1] + ' ' + viewYear;
+  const von = `${viewYear}-${String(viewMonth).padStart(2,'0')}-01`;
+  const bisD = new Date(viewYear, viewMonth, 0);
+  const bis = `${viewYear}-${String(viewMonth).padStart(2,'0')}-${String(bisD.getDate()).padStart(2,'0')}`;
+  const { data } = await sb.from('zeiterfassung')
+    .select('id, datum, datum_de, weekday, start_zeit, end_zeit, pause, net_hours, ueberstunden_genommen, art, remark, ist_korrektur')
+    .eq('pnr', currentMA.pnr).gte('datum', von).lte('datum', bis);
+  const byDay = {}; let sumH=0, wd=0, ab=0;
+  (data||[]).forEach(e => {
+    const dd = new Date(e.datum); byDay[dd.getDate()] = e;
+    const h = parseHours(e.net_hours); sumH += h;
+    if (e.art==='Urlaub'||e.art==='Krank') ab++;
+    else if (h>0||e.art==='Feiertag') wd++;
+  });
+  detailByDay = byDay;
+  document.getElementById('dSumHours').textContent  = sumH.toFixed(1).replace('.',',');
+  document.getElementById('dSumDays').textContent   = wd;
+  document.getElementById('dSumAbsent').textContent = ab;
+  const dim = bisD.getDate();
+  const tb = document.getElementById('detailBody'); tb.innerHTML='';
+  for (let day=1; day<=dim; day++){
+    const date = new Date(viewYear, viewMonth-1, day);
+    const w = date.getDay(); const we = (w===0||w===6);
+    const e = byDay[day];
+    const tr = document.createElement('tr'); if(we) tr.className='weekend';
+    const dc = '<td class="daycol">'+day+'.<span class="wd">'+WD[w]+'</span></td>';
+    if (e){
+      const h = parseHours(e.net_hours);
+      const korr = e.ist_korrektur ? '<span class="korrektur-badge">korrigiert</span>' : '';
+      tr.innerHTML = dc +
+        '<td>'+(e.start_zeit||'<span class="dash">–</span>')+'</td>'+
+        '<td>'+(e.pause||'<span class="dash">–</span>')+'</td>'+
+        '<td>'+(e.end_zeit||'<span class="dash">–</span>')+'</td>'+
+        '<td>'+(h>0?h.toFixed(2).replace('.',',')+' h':'<span class="dash">–</span>')+'</td>'+
+        '<td><span class="tag tag-'+e.art.toLowerCase()+'">'+e.art+'</span>'+korr+'</td>'+
+        '<td>'+((e.ueberstunden_genommen>0)?parseFloat(e.ueberstunden_genommen).toFixed(1).replace('.',',')+' h':'<span class="dash">–</span>')+'</td>'+
+        '<td>'+(e.remark||'')+'</td>'+
+        '<td><button class="editrow" onclick="openKorrektur('+day+')" title="Korrigieren">✎</button></td>';
+    } else {
+      tr.innerHTML = dc + '<td><span class="dash">–</span></td>'.repeat(4) + '<td></td><td></td><td></td><td></td>';
+    }
+    tb.appendChild(tr);
+  }
+}
+ 
+// ---- KORREKTUR ----
+let korrDay = null;
+function pauseToMin(p){ const m=String(p||'').match(/(\d+)/); return m?parseInt(m[1],10):0; }
+function berechneDauer() {
+  const b = document.getElementById('kBeginn').value;
+  const e = document.getElementById('kEnde').value;
+  const pause = pauseToMin(document.getElementById('kPause').value);
+  const art = document.getElementById('kArt').value;
+  const box = document.getElementById('kDauer');
+  const uRow = document.getElementById('kUeberstdRow');
+  if (art==='Baustelle') { uRow.style.display=''; }
+  else { uRow.style.display='none'; document.getElementById('kUeberstd').value='0'; }
+  if (art==='Urlaub' || art==='Krank' || art==='Feiertag') {
+    box.textContent = 'Dauer: 8,00 h (' + art + ')'; box.dataset.h = '8.00'; return;
+  }
+  if (!b || !e) { box.textContent = 'Dauer: –'; box.dataset.h = '0'; return; }
+  const [bh,bm] = b.split(':').map(Number);
+  const [eh,em] = e.split(':').map(Number);
+  let min = (eh*60+em) - (bh*60+bm) - pause;
+  if (min < 0) min = 0;
+  const h = min/60;
+  box.textContent = 'Dauer: ' + h.toFixed(2).replace('.',',') + ' h';
+  box.dataset.h = h.toFixed(2);
+}
+function openKorrektur(day) {
+  const e = detailByDay[day]; if (!e) return;
+  korrDay = day;
+  document.getElementById('korrSub').textContent = currentMA.name + ' · ' + day + '. ' + MONTHS[viewMonth-1] + ' ' + viewYear;
+  document.getElementById('kBeginn').value = e.start_zeit || '';
+  document.getElementById('kEnde').value   = e.end_zeit || '';
+  document.getElementById('kPause').value  = e.pause || '0 Min.';
+  document.getElementById('kArt').value    = e.art || 'Baustelle';
+  document.getElementById('kUeberstd').value = (e.ueberstunden_genommen != null ? e.ueberstunden_genommen : 0);
+  document.getElementById('kRemark').value = e.remark || '';
+  berechneDauer();
+  document.getElementById('korrModal').classList.add('open');
+}
+function closeKorrektur() { document.getElementById('korrModal').classList.remove('open'); korrDay = null; }
+async function saveKorrektur() {
+  const e = detailByDay[korrDay]; if (!e) return;
+  const btn = document.getElementById('kSaveBtn');
+  btn.disabled = true; btn.textContent = 'Speichert…';
+  const art = document.getElementById('kArt').value;
+  const istAbwesend = (art==='Urlaub'||art==='Krank'||art==='Feiertag');
+  const ustd = (art==='Baustelle') ? (parseFloat(document.getElementById('kUeberstd').value) || 0) : 0;
+  const update = {
+    start_zeit: istAbwesend ? null : (document.getElementById('kBeginn').value || null),
+    end_zeit:   istAbwesend ? null : (document.getElementById('kEnde').value || null),
+    pause:      istAbwesend ? null : document.getElementById('kPause').value,
+    net_hours:  parseFloat(document.getElementById('kDauer').dataset.h || '0'),
+    art:        art,
+    ueberstunden_genommen: ustd,
+    remark:     document.getElementById('kRemark').value.trim() || null,
+    quelle:     'admin'
+  };
+  const { error } = await sb.from('zeiterfassung').update(update).eq('id', e.id);
+  btn.disabled = false; btn.textContent = 'Speichern';
+  if (error) { alert('Speichern fehlgeschlagen: ' + error.message); return; }
+  closeKorrektur();
+  await renderDetail();
+}
+ 
+// ---- GESAMTÜBERSICHT ----
+function changeGesamtMonth(d) {
+  gMonth += d;
+  if (gMonth < 1){ gMonth = 12; gYear--; }
+  if (gMonth > 12){ gMonth = 1; gYear++; }
+  renderGesamt();
+}
+async function renderGesamt() {
+  document.getElementById('gesamtMonth').textContent = MONTHS[gMonth-1] + ' ' + gYear;
+  const von = `${gYear}-${String(gMonth).padStart(2,'0')}-01`;
+  const bisD = new Date(gYear, gMonth, 0);
+  const bis = `${gYear}-${String(gMonth).padStart(2,'0')}-${String(bisD.getDate()).padStart(2,'0')}`;
+  const { data } = await sb.from('zeiterfassung').select('pnr, net_hours, art, datum').gte('datum', von).lte('datum', bis);
+  const agg = {};
+  (data||[]).forEach(e => {
+    if(!agg[e.pnr]) agg[e.pnr] = { h:0, wd:0, ab:0 };
+    const h = parseHours(e.net_hours); agg[e.pnr].h += h;
+    if (e.art==='Urlaub'||e.art==='Krank') agg[e.pnr].ab++;
+    else if (h>0||e.art==='Feiertag') agg[e.pnr].wd++;
+  });
+  const tb = document.getElementById('gesamtBody'); tb.innerHTML='';
+  let total = 0;
+  mitarbeiter.filter(m=>m.aktiv).forEach(ma => {
+    const a = agg[ma.pnr] || { h:0, wd:0, ab:0 };
+    total += a.h;
+    const tr = document.createElement('tr');
+    tr.className = 'clickable';
+    tr.onclick = () => { openMA(ma); viewYear=gYear; viewMonth=gMonth; renderDetail(); };
+    tr.innerHTML =
+      '<td><b>'+ma.name+'</b></td><td>'+ma.pnr+'</td>'+
+      '<td class="num">'+a.h.toFixed(1).replace('.',',')+'</td>'+
+      '<td class="num">'+a.wd+'</td><td class="num">'+a.ab+'</td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('gesamtHint').textContent =
+    'Gesamt: ' + total.toFixed(1).replace('.',',') + ' Stunden · Klick auf eine Zeile öffnet den Stundennachweis.';
+}
+ 
+// ============ PDF / DRUCK ============
+function buildPrintDoc(year, month, entries, empName, empPnr, pageBreak) {
+  const byDay = {}; let sumH = 0, wd = 0, ab = 0, sumU = 0;
+  (entries || []).forEach(e => {
+    const dd = new Date(e.datum); byDay[dd.getDate()] = e;
+    const h = parseHours(e.net_hours); sumH += h;
+    sumU += (parseFloat(e.ueberstunden_genommen) || 0);
+    if (e.art === 'Urlaub' || e.art === 'Krank') ab++;
+    else if (h > 0 || e.art === 'Feiertag') wd++;
+  });
+  const dim = new Date(year, month, 0).getDate();
+  let rows = '';
+  for (let day = 1; day <= dim; day++) {
+    const date = new Date(year, month - 1, day);
+    const w = date.getDay(); const we = (w === 0 || w === 6);
+    const e = byDay[day];
+    const dc = '<td>' + day + '. ' + WD[w] + '</td>';
+    if (e) {
+      const h = parseHours(e.net_hours);
+      const u = parseFloat(e.ueberstunden_genommen) || 0;
+      rows += '<tr' + (we ? ' class="we"' : '') + '>' + dc +
+        '<td>' + (e.start_zeit || '') + '</td><td>' + (e.pause || '') + '</td>' +
+        '<td>' + (e.end_zeit || '') + '</td>' +
+        '<td class="num">' + (h > 0 ? h.toFixed(2).replace('.', ',') : '') + '</td>' +
+        '<td>' + e.art + (e.ist_korrektur ? ' (korr.)' : '') + '</td>' +
+        '<td class="num">' + (u > 0 ? u.toFixed(2).replace('.', ',') : '') + '</td>' +
+        '<td>' + (e.remark || '') + '</td></tr>';
+    } else {
+      rows += '<tr' + (we ? ' class="we"' : '') + '>' + dc + '<td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+    }
+  }
+  return '<div class="print-doc' + (pageBreak ? ' page-break' : '') + '">' +
+    '<h1>Stundennachweis</h1>' +
+    '<div class="ph">Garten- und Landschaftsbau Fichtelmann GmbH</div>' +
+    '<div class="pmeta"><b>' + empName + '</b> · Pers.-Nr. ' + empPnr + ' · ' + MONTHS[month - 1] + ' ' + year + '</div>' +
+    '<table><thead><tr><th>Tag</th><th>Beginn</th><th>Pause</th><th>Ende</th><th>Dauer (h)</th><th>Art</th><th>ÜStd. gen.</th><th>Bemerkung</th></tr></thead><tbody>' +
+    rows +
+    '<tr class="sumrow"><td colspan="4">Summe ' + MONTHS[month - 1] + '</td>' +
+    '<td class="num">' + sumH.toFixed(2).replace('.', ',') + '</td>' +
+    '<td></td>' +
+    '<td class="num">' + (sumU > 0 ? sumU.toFixed(2).replace('.', ',') : '') + '</td>' +
+    '<td>' + wd + ' Arbeitstage · ' + ab + ' Urlaub/Krank</td></tr>' +
+    '</tbody></table></div>';
+}
+async function pdfEinzel() {
+  const von = `${viewYear}-${String(viewMonth).padStart(2,'0')}-01`;
+  const bisD = new Date(viewYear, viewMonth, 0);
+  const bis = `${viewYear}-${String(viewMonth).padStart(2,'0')}-${String(bisD.getDate()).padStart(2,'0')}`;
+  const { data } = await sb.from('zeiterfassung')
+    .select('datum, start_zeit, end_zeit, pause, net_hours, ueberstunden_genommen, art, remark, ist_korrektur')
+    .eq('pnr', currentMA.pnr).gte('datum', von).lte('datum', bis);
+  document.getElementById('printArea').innerHTML = buildPrintDoc(viewYear, viewMonth, data, currentMA.name, currentMA.pnr, false);
+  window.print();
+}
+async function pdfSammel() {
+  const von = `${gYear}-${String(gMonth).padStart(2,'0')}-01`;
+  const bisD = new Date(gYear, gMonth, 0);
+  const bis = `${gYear}-${String(gMonth).padStart(2,'0')}-${String(bisD.getDate()).padStart(2,'0')}`;
+  const { data } = await sb.from('zeiterfassung')
+    .select('pnr, datum, start_zeit, end_zeit, pause, net_hours, ueberstunden_genommen, art, remark, ist_korrektur')
+    .gte('datum', von).lte('datum', bis);
+  const byPnr = {};
+  (data || []).forEach(e => { (byPnr[e.pnr] = byPnr[e.pnr] || []).push(e); });
+  const aktive = mitarbeiter.filter(m => m.aktiv);
+  let html = '';
+  aktive.forEach((ma, i) => {
+    const last = (i === aktive.length - 1);
+    html += buildPrintDoc(gYear, gMonth, byPnr[ma.pnr] || [], ma.name, ma.pnr, !last);
+  });
+  document.getElementById('printArea').innerHTML = html;
+  window.print();
+}
+ 
+// ---- MONATSABSCHLUSS ----
+const WD_FULL = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+function getFeiertage(year) {
+  const a=year%19, b=Math.floor(year/100), c=year%100, d=Math.floor(b/4), e=b%4,
+        f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4,
+        l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451),
+        month=Math.floor((h+l-7*m+114)/31), day=((h+l-7*m+114)%31)+1;
+  const ostern=new Date(year, month-1, day);
+  const pad=n=>String(n).padStart(2,'0');
+  const addDays=(dt,n)=>{const x=new Date(dt); x.setDate(x.getDate()+n); return x;};
+  const key=dt=>dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+  const fe={};
+  fe[year+'-01-01']='Neujahr';
+  fe[key(addDays(ostern,-2))]='Karfreitag';
+  fe[key(addDays(ostern,1))]='Ostermontag';
+  fe[year+'-05-01']='Tag der Arbeit';
+  fe[key(addDays(ostern,39))]='Christi Himmelfahrt';
+  fe[key(addDays(ostern,50))]='Pfingstmontag';
+  fe[year+'-10-03']='Tag der Deutschen Einheit';
+  fe[year+'-10-31']='Reformationstag';
+  fe[year+'-12-25']='1. Weihnachtstag';
+  fe[year+'-12-26']='2. Weihnachtstag';
+  return fe;
+}
+function monatKey(y,m){ return y + '-' + String(m).padStart(2,'0'); }
+function changeAbschlussMonth(d){
+  aMonth += d;
+  if (aMonth<1){ aMonth=12; aYear--; }
+  if (aMonth>12){ aMonth=1; aYear++; }
+  renderAbschluss();
+}
+async function renderAbschluss(){
+  if (!aYear){ aYear = gYear; aMonth = gMonth; }
+  document.getElementById('abschlussMonth').textContent = MONTHS[aMonth-1] + ' ' + aYear;
+  const mk = monatKey(aYear, aMonth);
+  const { data: st } = await sb.from('monatsabschluss').select('*').eq('monat', mk).maybeSingle();
+  const status = st ? st.status : 'offen';
+  const labels = {
+    offen:      '<span style="color:var(--muted);">● offen — läuft, normale Erfassung</span>',
+    vorlaeufig: '<span style="color:var(--blue);">● vorläufig abgeschlossen — fürs Steuerbüro</span>',
+    final:      '<span style="color:var(--green);">● endgültig abgeschlossen</span>'
+  };
+  document.getElementById('abschlussStatus').innerHTML = labels[status] || labels.offen;
+  const von = `${aYear}-${String(aMonth).padStart(2,'0')}-01`;
+  const bisD = new Date(aYear, aMonth, 0);
+  const bis = `${aYear}-${String(aMonth).padStart(2,'0')}-${String(bisD.getDate()).padStart(2,'0')}`;
+  const { data: vorl } = await sb.from('zeiterfassung')
+    .select('name, datum, datum_de, net_hours, vorlaeufig')
+    .eq('vorlaeufig', true).gte('datum', von).lte('datum', bis).order('name');
+  const tb = document.getElementById('vorlaeufigBody'); tb.innerHTML = '';
+  (vorl||[]).forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+e.name+'</td><td>'+(e.datum_de||e.datum)+'</td>'+
+      '<td class="num">'+parseHours(e.net_hours).toFixed(1).replace('.',',')+'</td>'+
+      '<td><span style="color:var(--blue); font-size:12px;">fortgeschrieben</span></td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('vorlaeufigHint').textContent = (vorl||[]).length
+    ? (vorl.length + ' fortgeschriebene Tage — beim Endabschluss prüfen/korrigieren.')
+    : 'Keine vorläufigen Tage. (Noch kein vorläufiger Abschluss gefahren, oder schon final.)';
+  document.getElementById('btnVorlaeufig').disabled = (status === 'final');
+  document.getElementById('btnFinal').disabled = (status === 'offen');
+}
+async function vorlaeufigAbschluss(){
+  if (!confirm('Vorläufigen Abschluss für ' + MONTHS[aMonth-1] + ' ' + aYear +
+    ' fahren?\n\nFehlende Arbeitstage (Mo–Fr, kein Feiertag, noch kein Eintrag) werden mit 8 Std. fortgeschrieben.')) return;
+  const btn = document.getElementById('btnVorlaeufig');
+  btn.disabled = true; btn.textContent = 'Verarbeite…';
+  const feiertage = getFeiertage(aYear);
+  const dim = new Date(aYear, aMonth, 0).getDate();
+  const von = `${aYear}-${String(aMonth).padStart(2,'0')}-01`;
+  const bis = `${aYear}-${String(aMonth).padStart(2,'0')}-${String(dim).padStart(2,'0')}`;
+  const pad = n => String(n).padStart(2,'0');
+  const aktive = mitarbeiter.filter(m => m.aktiv);
+  const { data: vorhanden } = await sb.from('zeiterfassung').select('pnr, datum').gte('datum', von).lte('datum', bis);
+  const hat = new Set((vorhanden||[]).map(e => e.pnr + '|' + e.datum));
+  const neu = [];
+  aktive.forEach(ma => {
+    for (let day=1; day<=dim; day++){
+      const dateStr = `${aYear}-${pad(aMonth)}-${pad(day)}`;
+      const wd = new Date(aYear, aMonth-1, day).getDay();
+      if (wd===0 || wd===6) continue;
+      if (feiertage[dateStr]) continue;
+      if (hat.has(ma.pnr + '|' + dateStr)) continue;
+      neu.push({
+        pnr: ma.pnr, name: ma.name,
+        company: 'Garten- und Landschaftsbau Fichtelmann GmbH',
+        datum: dateStr, datum_de: pad(day)+'.'+pad(aMonth)+'.'+aYear, weekday: WD_FULL[wd],
+        start_zeit: null, end_zeit: null, pause: null,
+        net_hours: 8.00, art: 'Baustelle', remark: 'fortgeschrieben (vorläufig)',
+        vorlaeufig: true, quelle: 'fortschreibung', erfasst_am: new Date().toISOString()
+      });
+    }
+  });
+  let ok=0, fail=0;
+  for (let i=0; i<neu.length; i+=200){
+    const batch = neu.slice(i, i+200);
+    const { error } = await sb.from('zeiterfassung').upsert(batch, { onConflict: 'pnr,datum' });
+    if (error) fail += batch.length; else ok += batch.length;
+  }
+  await sb.from('monatsabschluss').upsert({
+    monat: monatKey(aYear, aMonth), status: 'vorlaeufig',
+    vorlaeufig_am: new Date().toISOString(), updated_at: new Date().toISOString()
+  }, { onConflict: 'monat' });
+  btn.disabled = false; btn.textContent = '① Vorläufig abschließen + Export (Steuerbüro)';
+  alert(ok + ' Tage fortgeschrieben' + (fail? (', '+fail+' fehlgeschlagen'):'') + '.\nExport wird erzeugt.');
+  await exportGesamtCSV('vorlaeufig');
+  renderAbschluss();
+}
+async function finalAbschluss(){
+  if (!confirm('Monat ' + MONTHS[aMonth-1] + ' ' + aYear + ' ENDGÜLTIG abschließen?\n\n' +
+    'Vorher alle vorläufigen Tage geprüft/korrigiert? Danach gilt der Monat als final.')) return;
+  const von = `${aYear}-${String(aMonth).padStart(2,'0')}-01`;
+  const dim = new Date(aYear, aMonth, 0).getDate();
+  const bis = `${aYear}-${String(aMonth).padStart(2,'0')}-${String(dim).padStart(2,'0')}`;
+  await sb.from('zeiterfassung').update({ vorlaeufig: false })
+    .eq('vorlaeufig', true).gte('datum', von).lte('datum', bis);
+  await sb.from('monatsabschluss').upsert({
+    monat: monatKey(aYear, aMonth), status: 'final',
+    final_am: new Date().toISOString(), updated_at: new Date().toISOString()
+  }, { onConflict: 'monat' });
+  alert('Monat endgültig abgeschlossen. Finaler Export wird erzeugt.');
+  await exportGesamtCSV('final');
+  renderAbschluss();
+}
+async function exportGesamtCSV(suffix){
+  const von = `${aYear}-${String(aMonth).padStart(2,'0')}-01`;
+  const dim = new Date(aYear, aMonth, 0).getDate();
+  const bis = `${aYear}-${String(aMonth).padStart(2,'0')}-${String(dim).padStart(2,'0')}`;
+  const { data } = await sb.from('zeiterfassung')
+    .select('pnr, name, datum_de, weekday, start_zeit, end_zeit, pause, net_hours, art, remark, vorlaeufig, ist_korrektur')
+    .gte('datum', von).lte('datum', bis).order('pnr').order('datum');
+  const head = ['Pers-Nr','Name','Datum','Wochentag','Beginn','Ende','Pause','Stunden','Art','Bemerkung','Vorläufig','Korrigiert'];
+  const sep = ';';
+  const rows = [head.join(sep)];
+  (data||[]).forEach(e => {
+    rows.push([
+      e.pnr, e.name, e.datum_de||'', e.weekday||'',
+      e.start_zeit||'', e.end_zeit||'', e.pause||'',
+      parseHours(e.net_hours).toFixed(2).replace('.',','),
+      e.art||'', (e.remark||'').replace(/[;\n\r]/g,' '),
+      e.vorlaeufig?'ja':'', e.ist_korrektur?'ja':''
+    ].join(sep));
+  });
+  const csv = '\ufeff' + rows.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Zeiterfassung_' + monatKey(aYear,aMonth) + (suffix?('_'+suffix):'') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+ 
+// ---- INIT ----
+async function boot() {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  const { data } = await sb.auth.getSession();
+  if (data.session) showApp();
+}
+boot();
+</script>
+</body>
+</html>
